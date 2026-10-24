@@ -1,0 +1,34 @@
+{
+  "Form": {
+    "requiredField": "Este campo es obligatorio",
+    "required": "Este campo es obligatorio",
+    "minLength": "Debe tener al menos {min} caracteres",
+    "maxLength": "No puede superar los {max} caracteres",
+    "minValue": "El valor mínimo es {min}",
+    "maxValue": "El valor máximo es {max}",
+    "invalidFormat": "El formato no es válido",
+    "invalidYear": "El año no es válido",
+    "showPassword": "Mostrar contraseña",
+    "hidePassword": "Ocultar contraseña"
+  },
+  "Buttons": {
+    "add": "Agregar",
+    "update": "Actualizar",
+    "delete": "Borrar",
+    "deletes": "Eliminar",
+    "edit": "Editar",
+    "cancel": "Cancelar",
+    "addEmail": "Agregar Correo",
+    "addPhone": "Agregar Telefono"
+  },
+  "Login": {
+    "signIn": "Iniciar sesion"
+  },
+  "Titles": {
+    "home": "Inicio",
+    "login": "Iniciar sesión",
+    "profile": "Perfil",
+    "default": "Astra Notify",
+    "notificaciones": "Notificaciones"
+  }
+}
