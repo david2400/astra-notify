@@ -10,7 +10,10 @@ import { Link } from "@/shared/i18n/routing";
  * enlaces a rutas que no existen en la app). Ahora sólo apunta a secciones
  * reales del producto.
  */
-const SECTIONS = [{ label: "Envíos", href: "/notificaciones/envios" }];
+const SECTIONS = [
+  { label: "Envíos", href: "/notificaciones/envios" },
+  { label: "Configuración SMS", href: "/administre/sms" },
+];
 
 export const Footer = () => (
   <footer className='mt-10 border-t border-border bg-card/60'>
@@ -18,7 +21,7 @@ export const Footer = () => (
       <div className='space-y-1'>
         <p className='text-sm font-semibold text-foreground'>Astra Notify</p>
         <p className='text-xs text-muted-foreground'>
-          Plataforma de gestión académica e institucional.
+          Plataforma de notificaciones: SMS, WhatsApp y correo.
         </p>
       </div>
 

@@ -98,6 +98,23 @@ export const env = {
     return url.replace(/\/+$/, '');
   },
 
+  /**
+   * sms_gateway (motor de SMS/WhatsApp y su administración). Servicio propio con prefijo
+   * /api/sms_gateway; ver smsGatewayFetch en server-fetch.ts.
+   */
+  get smsGatewayBaseUrl(): string {
+    const resolved = process.env.SMS_GATEWAY_API_URL ?? process.env.NEXT_PUBLIC_SMS_GATEWAY_API_URL;
+    const devFallback =
+      process.env.NODE_ENV !== 'production'
+        ? `http://localhost:${process.env.DEV_SMS_GATEWAY_PORT ?? 9002}`
+        : undefined;
+    const url = resolved ?? devFallback ?? '';
+    if (!url) {
+      throw new Error('[env] SMS_GATEWAY_API_URL is not configured. Set it in your .env file.');
+    }
+    return url.replace(/\/+$/, '');
+  },
+
   get isDev(): boolean {
     return process.env.NODE_ENV === 'development';
   },

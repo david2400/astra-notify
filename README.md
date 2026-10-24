@@ -24,6 +24,7 @@ app/
     (protected)/            área con sesión: navbar + footer (layout.tsx)
       page.tsx              inicio: menú de módulos (shared/navegacion.ts)
       notificaciones/envios módulo de ejemplo
+      administre/sms/       administración de sms_gateway (una carpeta por módulo)
   api/auth/[...nextauth]    handlers de Auth.js
   style/globals.css         paleta de colores (variables CSS)
 auth.ts                     Auth.js: OIDC (access_control) o usuario/contraseña
@@ -40,6 +41,26 @@ store/                      Redux (slice de idioma)
 lib/                        providers (React Query, sesión, Redux, idioma)
 types/next-auth.d.ts        campos extra de la sesión
 ```
+
+## Administración SMS (`/administre/sms`)
+
+Pantallas sobre la API de administración de **sms_gateway** (`SMS_GATEWAY_API_URL`, dev `http://localhost:9002`).
+Cada función es un módulo independiente con el mismo patrón:
+
+| Módulo | Ruta | Qué hace |
+|---|---|---|
+| `resumen` | `/administre/sms` | Conteos y alertas (proveedor sin módulo, cuenta en rutas sin credenciales, ruta sin pasos) |
+| `proveedores` | `/administre/sms/proveedores` | Alta/edición, timeouts, activar/desactivar |
+| `cuentas` | `/administre/sms/cuentas` | Usuario, clave cifrada o variable de entorno, remitente, parámetros JSON |
+| `tipos_mensaje` | `/administre/sms/tipos-mensaje` | Catálogo (canal, OTP, masivo), eliminar |
+| `servicios` | `/administre/sms/servicios` | Tipos de mensaje que atiende cada proveedor |
+| `rutas` | `/administre/sms/rutas` | Pasos ordenados (cuenta, intentos, espera), ruta efectiva con advertencias |
+| `plantillas` | `/administre/sms/plantillas` | Contenido con `{{variables}}`, validación y previsualización (codificación y partes) |
+| `shared` | — | Navegación por pestañas, encabezado, badges, selects, feedback (SweetAlert), refrescar caché |
+
+Código: `modules/administre/sms/<modulo>` (UI), `server/domains/administre/sms/<recurso>` (API) y
+`app/[locale]/(protected)/administre/sms/<ruta>` (página + `actions.ts`). Las server actions devuelven
+`ActionResult` (`{ success, data | error }`) para mostrar el mensaje real del gateway también en producción.
 
 ## Agregar un módulo
 

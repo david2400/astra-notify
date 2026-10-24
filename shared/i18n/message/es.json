@@ -29,6 +29,7 @@
     "login": "Iniciar sesión",
     "profile": "Perfil",
     "default": "Astra Notify",
-    "notificaciones": "Notificaciones"
+    "notificaciones": "Notificaciones",
+    "administre_sms": "Configuración SMS"
   }
 }

@@ -132,6 +132,14 @@ function extractErrorMessage(body: unknown, status: number): string {
     const bodyObj = body as any;
     
     // Common error message properties in order of preference
+    // sms_gateway (AdminErrorResponse / SmsErrorResponse): { codigo, mensaje, detalles[] }
+    if (typeof bodyObj.mensaje === 'string') {
+      const detalles = Array.isArray(bodyObj.detalles)
+        ? bodyObj.detalles.filter((d: unknown) => typeof d === 'string' && d)
+        : [];
+      return detalles.length ? `${bodyObj.mensaje}: ${detalles.join('; ')}` : bodyObj.mensaje;
+    }
+
     const messageProps = [
       'detail',      // Django/DRF style
       'message',     // Generic REST APIs
@@ -324,5 +332,39 @@ export const parametrosFetch = {
 
   delete<T>(path: string, opts?: ServerFetchOptions) {
     return serverRequest<T>('DELETE', path, { ...opts, baseUrl: env.parametrosBaseUrl });
+  },
+} as const;
+
+// ─── sms_gateway client ─────────────────────────────────────────────────────
+// Motor de SMS/WhatsApp (proveedores, cuentas, rutas, plantillas). Sus
+// controladores cuelgan de /api/sms_gateway/v1/sms; los repositorios pasan la
+// ruta del recurso ("/admin/proveedores") y aquí se antepone el prefijo.
+
+const SMS_GATEWAY_PREFIX = '/api/sms_gateway/v1/sms';
+
+export function rutaSmsGateway(path: string): string {
+  const conBarra = path.startsWith('/') ? path : `/${path}`;
+  return conBarra.startsWith(`${SMS_GATEWAY_PREFIX}/`) ? conBarra : `${SMS_GATEWAY_PREFIX}${conBarra}`;
+}
+
+export const smsGatewayFetch = {
+  get<T>(path: string, opts?: ServerFetchOptions & { params?: Record<string, unknown> }) {
+    return serverRequest<T>('GET', rutaSmsGateway(path), { ...opts, baseUrl: env.smsGatewayBaseUrl });
+  },
+
+  post<T>(path: string, body?: unknown, opts?: ServerFetchOptions) {
+    return serverRequest<T>('POST', rutaSmsGateway(path), { ...opts, body, baseUrl: env.smsGatewayBaseUrl });
+  },
+
+  put<T>(path: string, body?: unknown, opts?: ServerFetchOptions) {
+    return serverRequest<T>('PUT', rutaSmsGateway(path), { ...opts, body, baseUrl: env.smsGatewayBaseUrl });
+  },
+
+  patch<T>(path: string, body?: unknown, opts?: ServerFetchOptions) {
+    return serverRequest<T>('PATCH', rutaSmsGateway(path), { ...opts, body, baseUrl: env.smsGatewayBaseUrl });
+  },
+
+  delete<T>(path: string, opts?: ServerFetchOptions) {
+    return serverRequest<T>('DELETE', rutaSmsGateway(path), { ...opts, baseUrl: env.smsGatewayBaseUrl });
   },
 } as const;
