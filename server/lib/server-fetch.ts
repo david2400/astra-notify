@@ -132,6 +132,18 @@ function extractErrorMessage(body: unknown, status: number): string {
     const bodyObj = body as any;
     
     // Common error message properties in order of preference
+    // sms_gateway SmsErrorResponse de plantillas: { detalle, errores: [{ variable, codigo, mensaje }] }
+    // Se listan las variables con problema (desconocidas, faltantes, formato), no solo el resumen.
+    if (Array.isArray(bodyObj.errores) && bodyObj.errores.length > 0) {
+      const mensajes = bodyObj.errores
+        .map((e: { mensaje?: unknown }) => (typeof e?.mensaje === 'string' ? e.mensaje : null))
+        .filter(Boolean);
+      if (mensajes.length) {
+        const resumen = typeof bodyObj.detalle === 'string' ? `${bodyObj.detalle}: ` : '';
+        return `${resumen}${mensajes.join('; ')}`;
+      }
+    }
+
     // sms_gateway (AdminErrorResponse / SmsErrorResponse): { codigo, mensaje, detalles[] }
     if (typeof bodyObj.mensaje === 'string') {
       const detalles = Array.isArray(bodyObj.detalles)
@@ -347,24 +359,25 @@ export function rutaSmsGateway(path: string): string {
   return conBarra.startsWith(`${SMS_GATEWAY_PREFIX}/`) ? conBarra : `${SMS_GATEWAY_PREFIX}${conBarra}`;
 }
 
+// async: si falta SMS_GATEWAY_API_URL el error llega como promesa rechazada (Promise.allSettled lo atrapa).
 export const smsGatewayFetch = {
-  get<T>(path: string, opts?: ServerFetchOptions & { params?: Record<string, unknown> }) {
+  async get<T>(path: string, opts?: ServerFetchOptions & { params?: Record<string, unknown> }) {
     return serverRequest<T>('GET', rutaSmsGateway(path), { ...opts, baseUrl: env.smsGatewayBaseUrl });
   },
 
-  post<T>(path: string, body?: unknown, opts?: ServerFetchOptions) {
+  async post<T>(path: string, body?: unknown, opts?: ServerFetchOptions) {
     return serverRequest<T>('POST', rutaSmsGateway(path), { ...opts, body, baseUrl: env.smsGatewayBaseUrl });
   },
 
-  put<T>(path: string, body?: unknown, opts?: ServerFetchOptions) {
+  async put<T>(path: string, body?: unknown, opts?: ServerFetchOptions) {
     return serverRequest<T>('PUT', rutaSmsGateway(path), { ...opts, body, baseUrl: env.smsGatewayBaseUrl });
   },
 
-  patch<T>(path: string, body?: unknown, opts?: ServerFetchOptions) {
+  async patch<T>(path: string, body?: unknown, opts?: ServerFetchOptions) {
     return serverRequest<T>('PATCH', rutaSmsGateway(path), { ...opts, body, baseUrl: env.smsGatewayBaseUrl });
   },
 
-  delete<T>(path: string, opts?: ServerFetchOptions) {
+  async delete<T>(path: string, opts?: ServerFetchOptions) {
     return serverRequest<T>('DELETE', rutaSmsGateway(path), { ...opts, baseUrl: env.smsGatewayBaseUrl });
   },
 } as const;

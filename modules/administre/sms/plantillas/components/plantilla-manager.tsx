@@ -3,7 +3,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { Link, useRouter } from '@/shared/i18n/routing';
 import type { ColumnDef } from '@tanstack/react-table';
 import { HiOutlineDocumentText } from 'react-icons/hi2';
 import { DataTable } from '@repo/ui/table/scenes';
@@ -12,27 +12,20 @@ import { Buttons } from '@repo/ui/buttons/scenes';
 import { Badge } from '@repo/ui/badges/scenes/badge';
 import { cambiarEstadoPlantillaServerAction } from '@/app/[locale]/(protected)/administre/sms/plantillas/actions';
 import { EmptyState } from '@/components/feedback/empty-state';
-import type { ITipoMensaje } from '@/server/domains/administre/sms/tipos-mensaje/types';
 import { EstadoBadge } from '../../shared/components/estado-badge';
 import { ManagerHeader } from '../../shared/components/manager-header';
 import { TablaAdmin } from '../../shared/components/tabla-admin';
 import { confirmar, ejecutarAccion } from '../../shared/utils/feedback';
 import type { IPlantilla } from '../models/plantilla.interface';
-import { RegisterPlantilla, UpdatePlantilla } from './form';
 import { PlantillaPreview } from './plantilla-preview';
 
-export function PlantillaManager({ initialData, tipos }: { initialData: IPlantilla[]; tipos: ITipoMensaje[] }) {
+export function PlantillaManager({ initialData }: { initialData: IPlantilla[] }) {
   const router = useRouter();
   const [plantillas, setPlantillas] = useState(initialData);
-  const [creando, setCreando] = useState(false);
-  const [editando, setEditando] = useState<IPlantilla | null>(null);
   const [previsualizando, setPrevisualizando] = useState<IPlantilla | null>(null);
   const [procesandoId, setProcesandoId] = useState<number | null>(null);
 
   useEffect(() => setPlantillas(initialData), [initialData]);
-
-  const opcionesTipo = useMemo(() => tipos.map((t) => ({ value: t.codigo, label: t.codigo })), [tipos]);
-
 
   const cambiarEstado = async (p: IPlantilla) => {
     const desactivar = !p.eliminado;
@@ -85,9 +78,9 @@ export function PlantillaManager({ initialData, tipos }: { initialData: IPlantil
         enableSorting: false,
         cell: ({ row }) => (
           <div className='flex flex-wrap gap-2'>
-            <Buttons size='sm' variant='outline' onClick={() => setEditando(row.original)}>
+            <Link href={`/administre/sms/plantillas/${row.original.id}/editar`} className='inline-flex items-center rounded-md border border-border px-3 py-2 text-sm font-medium transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'>
               Editar
-            </Buttons>
+            </Link>
             <Buttons size='sm' variant='outline' onClick={() => setPrevisualizando(row.original)}>
               Previsualizar
             </Buttons>
@@ -114,7 +107,7 @@ export function PlantillaManager({ initialData, tipos }: { initialData: IPlantil
         title='Plantillas'
         description='Textos con variables {{nombre}}. El gateway valida tipos, obligatorias y longitud antes de enviar.'
         actionLabel='Nueva plantilla'
-        onAction={() => setCreando(true)}
+        onAction={() => router.push('/administre/sms/plantillas/nueva')}
       />
 
       {plantillas.length === 0 ? (
@@ -125,17 +118,6 @@ export function PlantillaManager({ initialData, tipos }: { initialData: IPlantil
         </TablaAdmin>
       )}
 
-      <Modal size='xl' title='Nueva plantilla' open={creando} onOpenChange={setCreando} hideDefaultFooter>
-        <RegisterPlantilla tipos={opcionesTipo} handleClose={() => setCreando(false)} />
-      </Modal>
-      <Modal
-        size='xl'
-        title={editando ? `Editar ${editando.codigo} (v${editando.version})` : 'Editar plantilla'}
-        open={editando !== null}
-        onOpenChange={(open) => !open && setEditando(null)}
-        hideDefaultFooter>
-        {editando ? <UpdatePlantilla plantilla={editando} tipos={opcionesTipo} handleClose={() => setEditando(null)} /> : null}
-      </Modal>
       <Modal
         size='lg'
         title={previsualizando ? `Previsualizar ${previsualizando.codigo}` : 'Previsualizar'}

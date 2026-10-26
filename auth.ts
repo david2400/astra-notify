@@ -34,6 +34,15 @@ const CLIENT_SECRET = process.env.AUTH_ACCESS_CONTROL_SECRET;
 
 /** true si el login va por el servidor de autorizacion de access_control. */
 export const OIDC_HABILITADO = Boolean(CLIENT_SECRET);
+
+/**
+ * El login es OPCIONAL: se puede entrar sin sesión. Con AUTH_REQUIRED=true el middleware vuelve a
+ * exigirla (manda al login). Si alguien inicia sesión, sus datos y su token se usan igual.
+ */
+export const LOGIN_OBLIGATORIO = process.env.AUTH_REQUIRED === 'true';
+
+/** Sin AUTH_SECRET Auth.js no puede leer ni firmar la cookie: se trabaja siempre sin sesión. */
+export const AUTH_CONFIGURADO = Boolean(process.env.AUTH_SECRET);
 export const OIDC_PROVIDER_ID = 'access-control';
 
 interface AccessControlLoginResponse {
@@ -290,6 +299,11 @@ const result = NextAuth({
 });
 
 export const handlers: NextAuthResult['handlers'] = result.handlers;
-export const auth: NextAuthResult['auth'] = result.auth;
+// Sin AUTH_SECRET, auth() sin argumentos (lectura de sesión en páginas y server actions) devuelve
+// null en vez de fallar; los demás usos (envolver middleware/handlers) siguen yendo a Auth.js.
+export const auth: NextAuthResult['auth'] = AUTH_CONFIGURADO
+  ? result.auth
+  : (((...args: unknown[]) =>
+      args.length === 0 ? Promise.resolve(null) : (result.auth as (...a: unknown[]) => unknown)(...args)) as NextAuthResult['auth']);
 export const signIn: NextAuthResult['signIn'] = result.signIn;
 export const signOut: NextAuthResult['signOut'] = result.signOut;

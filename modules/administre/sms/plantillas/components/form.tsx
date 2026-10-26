@@ -2,7 +2,8 @@
 
 'use client';
 
-import { useRouter } from 'next/navigation';
+import { Link, useRouter } from '@/shared/i18n/routing';
+import { HiOutlineArrowLeft } from 'react-icons/hi2';
 import {
   actualizarPlantillaServerAction,
   crearPlantillaServerAction,
@@ -31,6 +32,27 @@ const toPayload = (v: PlantillaFormValues) => ({
 });
 
 const VACIA: PlantillaFormValues = { codigo: '', nombre: '', descripcion: '', tipo_mensaje: '', contenido: '', variables: [] };
+
+export function PlantillaEditorPage({ plantilla, tipos }: { plantilla?: IPlantilla; tipos: OpcionSelect[] }) {
+  const router = useRouter();
+  const volver = () => router.replace('/administre/sms/plantillas');
+  return (
+    <section className='mx-auto w-full max-w-7xl space-y-6'>
+      <Link href='/administre/sms/plantillas' className='inline-flex items-center gap-2 rounded-lg text-sm font-medium text-muted-foreground transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'>
+        <HiOutlineArrowLeft className='h-4 w-4' aria-hidden='true' />
+        Volver a plantillas
+      </Link>
+      <header className='space-y-2 border-b border-border pb-5'>
+        <p className='text-xs font-medium uppercase tracking-wider text-muted-foreground'>Administración SMS / Plantillas</p>
+        <h1 className='text-2xl font-bold tracking-tight text-foreground sm:text-3xl'>{plantilla ? `Editar ${plantilla.nombre}` : 'Nueva plantilla'}</h1>
+        <p className='text-sm text-muted-foreground'>{plantilla ? `Código ${plantilla.codigo} · Versión ${plantilla.version}. Al guardar se creará una nueva versión.` : 'Diseña tu mensaje, agrega variables y revisa el resultado antes de guardar.'}</p>
+      </header>
+      <div className='rounded-2xl border border-border bg-card p-4 sm:p-6'>
+        {plantilla ? <UpdatePlantilla plantilla={plantilla} tipos={tipos} handleClose={volver} /> : <RegisterPlantilla tipos={tipos} handleClose={volver} />}
+      </div>
+    </section>
+  );
+}
 
 export function RegisterPlantilla({ tipos, handleClose }: { tipos: OpcionSelect[]; handleClose: () => void }) {
   const router = useRouter();

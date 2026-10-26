@@ -71,6 +71,9 @@ Código: `modules/administre/sms/<modulo>` (UI), `server/domains/administre/sms/
 
 ## Notas
 
+- El login es **opcional**: todas las páginas abren con o sin sesión. Si el usuario inicia sesión se usan
+  su nombre y su token. `AUTH_REQUIRED=true` vuelve a exigir login; sin `AUTH_SECRET` se trabaja sin sesión.
+
 - La cookie de sesión se llama `astra-notify.session-token` (ver `auth.ts`) para no chocar con
   las otras apps del monorepo en localhost, donde las cookies no distinguen puerto.
 - Puerto por defecto 3000, igual que Next: si corres draco al mismo tiempo usa `pnpm dev -- -p 3001`.

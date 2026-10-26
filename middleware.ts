@@ -1,7 +1,7 @@
 import createMiddleware from 'next-intl/middleware';
 import {NextResponse, type NextMiddleware} from 'next/server';
 import {routing} from './shared/i18n/routing';
-import {auth} from './auth';
+import {auth, AUTH_CONFIGURADO, LOGIN_OBLIGATORIO} from './auth';
 import {COOKIE_ULTIMA_RUTA} from './server/lib/ruta-retorno';
 
 const intl = createMiddleware(routing);
@@ -13,15 +13,15 @@ const RUTAS_PUBLICAS = ['/auth/'];
  * 1) Auth.js envuelve el middleware de idiomas para RENOVAR el token de access_control: el access
  *    token dura 10 min y la renovacion (callback jwt de auth.ts) solo queda guardada donde se puede
  *    escribir la cookie de sesion. En un Server Component no se puede; aqui si.
- * 2) Sin sesion (nunca entro, cerro sesion, o la renovacion fallo porque la sesion de access_control
- *    vencio o fue revocada: el callback jwt devuelve null) se manda al login.
+ * 2) El login es opcional: se deja pasar con o sin sesion. Solo con AUTH_REQUIRED=true, quien no
+ *    tiene sesion (o se le vencio) se manda al login.
  */
 const middleware = auth((req) => {
   const {pathname} = req.nextUrl;
   const sinIdioma = pathname.replace(/^\/(es|en)(?=\/|$)/, '') || '/';
   const esPublica = RUTAS_PUBLICAS.some((r) => sinIdioma.startsWith(r));
 
-  if (!esPublica && !req.auth) {
+  if (LOGIN_OBLIGATORIO && !esPublica && !req.auth) {
     const idioma = pathname.match(/^\/(es|en)(?=\/|$)/)?.[1] ?? routing.defaultLocale;
     const login = new URL(`/${idioma}/auth/login`, req.nextUrl.origin);
     login.searchParams.set('expirada', '1');
@@ -43,7 +43,8 @@ const middleware = auth((req) => {
 });
 
 // Tipo explicito: el inferido de auth() apunta a tipos internos de next-auth y tsc no lo puede exportar (TS2742).
-export default middleware as unknown as NextMiddleware;
+// Sin AUTH_SECRET no hay sesiones que leer ni renovar: solo idioma.
+export default (AUTH_CONFIGURADO ? middleware : intl) as unknown as NextMiddleware;
 
 export const config = {
   matcher: ['/((?!api|_next|.*\\..*).*)'],
