@@ -115,6 +115,23 @@ export const env = {
     return url.replace(/\/+$/, '');
   },
 
+  /**
+   * email_gateway (motor de email y su administración). Servicio propio con prefijo
+   * /api/email_gateway; ver emailGatewayFetch en server-fetch.ts.
+   */
+  get emailGatewayBaseUrl(): string {
+    const resolved = process.env.EMAIL_GATEWAY_API_URL ?? process.env.NEXT_PUBLIC_EMAIL_GATEWAY_API_URL;
+    const devFallback =
+      process.env.NODE_ENV !== 'production'
+        ? `http://localhost:${process.env.DEV_EMAIL_GATEWAY_PORT ?? 9003}`
+        : undefined;
+    const url = resolved ?? devFallback ?? '';
+    if (!url) {
+      throw new Error('[env] EMAIL_GATEWAY_API_URL is not configured. Set it in your .env file.');
+    }
+    return url.replace(/\/+$/, '');
+  },
+
   get isDev(): boolean {
     return process.env.NODE_ENV === 'development';
   },

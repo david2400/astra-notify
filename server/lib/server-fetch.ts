@@ -112,7 +112,9 @@ async function handleResponse<T>(response: Response): Promise<T> {
     return undefined as T;
   }
 
-  return response.json() as Promise<T>;
+  // 200 sin cuerpo (p. ej. endpoints void de los gateways): no se intenta parsear JSON vacío
+  const texto = await response.text();
+  return (texto ? JSON.parse(texto) : undefined) as T;
 }
 
 // Helper function to extract error messages from various response formats
@@ -139,7 +141,9 @@ function extractErrorMessage(body: unknown, status: number): string {
         .map((e: { mensaje?: unknown }) => (typeof e?.mensaje === 'string' ? e.mensaje : null))
         .filter(Boolean);
       if (mensajes.length) {
-        const resumen = typeof bodyObj.detalle === 'string' ? `${bodyObj.detalle}: ` : '';
+        // sms_gateway usa `detalle`; email_gateway usa `mensaje` como resumen.
+        const titulo = typeof bodyObj.detalle === 'string' ? bodyObj.detalle : bodyObj.mensaje;
+        const resumen = typeof titulo === 'string' ? `${titulo}: ` : '';
         return `${resumen}${mensajes.join('; ')}`;
       }
     }
@@ -379,5 +383,40 @@ export const smsGatewayFetch = {
 
   async delete<T>(path: string, opts?: ServerFetchOptions) {
     return serverRequest<T>('DELETE', rutaSmsGateway(path), { ...opts, baseUrl: env.smsGatewayBaseUrl });
+  },
+} as const;
+
+// ─── email_gateway client ───────────────────────────────────────────────────
+// Motor de email (Gmail, Brevo, Mock): administración en /api/email_gateway/v1/admin y envíos en
+// /api/email_gateway/v1/email. Los repositorios pasan "/admin/..." o "/email/..." y aquí se antepone
+// el prefijo. Servicio independiente de sms_gateway (host/puerto propios).
+
+const EMAIL_GATEWAY_PREFIX = '/api/email_gateway/v1';
+
+export function rutaEmailGateway(path: string): string {
+  const conBarra = path.startsWith('/') ? path : `/${path}`;
+  return conBarra.startsWith(`${EMAIL_GATEWAY_PREFIX}/`) ? conBarra : `${EMAIL_GATEWAY_PREFIX}${conBarra}`;
+}
+
+// async: si falta EMAIL_GATEWAY_API_URL el error llega como promesa rechazada (Promise.allSettled lo atrapa).
+export const emailGatewayFetch = {
+  async get<T>(path: string, opts?: ServerFetchOptions & { params?: Record<string, unknown> }) {
+    return serverRequest<T>('GET', rutaEmailGateway(path), { ...opts, baseUrl: env.emailGatewayBaseUrl });
+  },
+
+  async post<T>(path: string, body?: unknown, opts?: ServerFetchOptions) {
+    return serverRequest<T>('POST', rutaEmailGateway(path), { ...opts, body, baseUrl: env.emailGatewayBaseUrl });
+  },
+
+  async put<T>(path: string, body?: unknown, opts?: ServerFetchOptions) {
+    return serverRequest<T>('PUT', rutaEmailGateway(path), { ...opts, body, baseUrl: env.emailGatewayBaseUrl });
+  },
+
+  async patch<T>(path: string, body?: unknown, opts?: ServerFetchOptions) {
+    return serverRequest<T>('PATCH', rutaEmailGateway(path), { ...opts, body, baseUrl: env.emailGatewayBaseUrl });
+  },
+
+  async delete<T>(path: string, opts?: ServerFetchOptions) {
+    return serverRequest<T>('DELETE', rutaEmailGateway(path), { ...opts, baseUrl: env.emailGatewayBaseUrl });
   },
 } as const;

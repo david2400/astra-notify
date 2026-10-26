@@ -13,6 +13,7 @@ import { Link } from "@/shared/i18n/routing";
 const SECTIONS = [
   { label: "Envíos", href: "/notificaciones/envios" },
   { label: "Configuración SMS", href: "/administre/sms" },
+  { label: "Configuración Email", href: "/administre/email" },
 ];
 
 export const Footer = () => (

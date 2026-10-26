@@ -25,6 +25,7 @@ app/
       page.tsx              inicio: menú de módulos (shared/navegacion.ts)
       notificaciones/envios módulo de ejemplo
       administre/sms/       administración de sms_gateway (una carpeta por módulo)
+      administre/email/     administración de email_gateway (módulo independiente)
   api/auth/[...nextauth]    handlers de Auth.js
   style/globals.css         paleta de colores (variables CSS)
 auth.ts                     Auth.js: OIDC (access_control) o usuario/contraseña
@@ -61,6 +62,27 @@ Cada función es un módulo independiente con el mismo patrón:
 Código: `modules/administre/sms/<modulo>` (UI), `server/domains/administre/sms/<recurso>` (API) y
 `app/[locale]/(protected)/administre/sms/<ruta>` (página + `actions.ts`). Las server actions devuelven
 `ActionResult` (`{ success, data | error }`) para mostrar el mensaje real del gateway también en producción.
+
+## Administración Email (`/administre/email`)
+
+Módulo **independiente** del de SMS (otro servicio, otro cliente HTTP y otros contratos) sobre
+**email_gateway** (`EMAIL_GATEWAY_API_URL`, dev `http://localhost:9003`, cliente `emailGatewayFetch`).
+No importa nada de `administre/sms`: tiene su propio `shared`.
+
+| Módulo | Ruta | Qué hace |
+|---|---|---|
+| `resumen` | `/administre/email` | Cola (pendientes, en reintento, fallidos), conteos y alertas (sin implementación, cuenta en rutas sin credenciales, remitente de ejemplo, ruta sin pasos) |
+| `envios` | `/administre/email/envios` | Historial paginado con filtros, detalle (intentos por paso, eventos de entrega, adjuntos), cancelar, reintentar y **envío de prueba** síncrono |
+| `proveedores` | `/administre/email/proveedores` | Gmail (host SMTP), Brevo (URL API), Mock; timeouts, servicios, activar/desactivar |
+| `cuentas` | `/administre/email/cuentas` | Remitente, contraseña de aplicación / OAuth2 (Gmail) / api-key (Brevo) cifradas, `secret_ref`, parámetros (límites), **probar conexión** |
+| `tipos_mensaje` | `/administre/email/tipos-mensaje` | Catálogo con prioridad en la cola (1–9) y masivo |
+| `servicios` | `/administre/email/servicios` | Tipos de mensaje que atiende cada proveedor |
+| `rutas` | `/administre/email/rutas` | Pasos de fallback (cuenta, intentos, espera base del backoff) y **simulador** de ruta efectiva (proveedor preferido / cuenta) |
+| `plantillas` | `/administre/email/plantillas` | Asunto + HTML + texto con `{{variables}}`, paleta que inserta en el campo enfocado, vista previa HTML aislada (iframe sandbox), validación en el gateway |
+| `shared` | — | Pestañas, encabezado, badges de estado/entrega, selects, feedback, refrescar caché |
+
+Código: `modules/administre/email/<modulo>`, `server/domains/administre/email/<recurso>` y
+`app/[locale]/(protected)/administre/email/<ruta>`. Los recursos se identifican por código (las rutas por id).
 
 ## Agregar un módulo
 

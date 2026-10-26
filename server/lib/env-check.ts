@@ -22,6 +22,14 @@ export function verificarEntorno(): string[] {
     );
   }
 
+  if (!definida('EMAIL_GATEWAY_API_URL') && !definida('NEXT_PUBLIC_EMAIL_GATEWAY_API_URL')) {
+    avisos.push(
+      produccion
+        ? 'EMAIL_GATEWAY_API_URL no está definida: la administración de email no podrá conectarse al gateway.'
+        : `EMAIL_GATEWAY_API_URL no está definida: se usa http://localhost:${process.env.DEV_EMAIL_GATEWAY_PORT ?? 9003}.`,
+    );
+  }
+
   if (!definida('AUTH_SECRET')) {
     avisos.push('AUTH_SECRET no está definida: nadie puede iniciar sesión y todas las páginas se abren sin usuario.');
     if (process.env.AUTH_REQUIRED === 'true') {

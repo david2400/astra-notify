@@ -1,7 +1,7 @@
 /** @format */
 
 import type { IconType } from "react-icons";
-import { BiCog, BiHome, BiMessageSquareDetail } from "react-icons/bi";
+import { BiCog, BiEnvelope, BiHome, BiMessageSquareDetail } from "react-icons/bi";
 
 /**
  * Menu principal de astra-notify: una sola definicion para la barra de navegacion y la pagina de
@@ -43,6 +43,21 @@ export const NAV_ITEMS: NavItem[] = [
       { label: "Servicios por proveedor", href: "/administre/sms/servicios" },
       { label: "Rutas", href: "/administre/sms/rutas" },
       { label: "Plantillas", href: "/administre/sms/plantillas" },
+    ],
+  },
+  {
+    label: "Administración Email",
+    icon: BiEnvelope,
+    descripcion: "Envíos, proveedores (Gmail, Brevo), cuentas, rutas y plantillas del gateway de email.",
+    options: [
+      { label: "Resumen", href: "/administre/email" },
+      { label: "Envíos", href: "/administre/email/envios" },
+      { label: "Proveedores", href: "/administre/email/proveedores" },
+      { label: "Cuentas", href: "/administre/email/cuentas" },
+      { label: "Tipos de mensaje", href: "/administre/email/tipos-mensaje" },
+      { label: "Servicios por proveedor", href: "/administre/email/servicios" },
+      { label: "Rutas", href: "/administre/email/rutas" },
+      { label: "Plantillas", href: "/administre/email/plantillas" },
     ],
   },
 ];
