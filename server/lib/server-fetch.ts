@@ -157,6 +157,7 @@ function extractErrorMessage(body: unknown, status: number): string {
     }
 
     const messageProps = [
+      'detalle',     // sms_gateway SmsErrorResponse / SmsEnvioResponse
       'detail',      // Django/DRF style
       'message',     // Generic REST APIs
       'error',       // Some APIs

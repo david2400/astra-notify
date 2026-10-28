@@ -25,10 +25,12 @@ interface Props {
   filtro: IFiltroEnvios;
   tipos: ITipoMensaje[];
   plantillas: IPlantilla[];
+  /** false oculta el botón "Enviar prueba" (historial de Notificaciones). */
+  mostrarPrueba?: boolean;
 }
 
 /** Historial de envíos de email (paginado en el gateway) con detalle, cancelar, reintentar y envío de prueba. */
-export function EnvioEmailManager({ pagina, filtro, tipos, plantillas }: Props) {
+export function EnvioEmailManager({ pagina, filtro, tipos, plantillas, mostrarPrueba = true }: Props) {
   const router = useRouter();
   const [detalle, setDetalle] = useState<string | null>(null);
   const [probando, setProbando] = useState(false);
@@ -65,10 +67,12 @@ export function EnvioEmailManager({ pagina, filtro, tipos, plantillas }: Props) 
           title='Envíos'
           description='Historial de la cola: estado de procesamiento, estado de entrega (webhooks), intentos por proveedor y fallback.'
         />
-        <Buttons className='inline-flex shrink-0 items-center gap-2' onClick={() => setProbando(true)}>
-          <HiOutlinePaperAirplane className='h-4 w-4' />
-          Enviar prueba
-        </Buttons>
+        {mostrarPrueba ? (
+          <Buttons className='inline-flex shrink-0 items-center gap-2' onClick={() => setProbando(true)}>
+            <HiOutlinePaperAirplane className='h-4 w-4' />
+            Enviar prueba
+          </Buttons>
+        ) : null}
       </div>
 
       <FiltrosEnvios filtro={filtro} tipos={opcionesTipo} />

@@ -10,6 +10,10 @@ const nextConfig: NextConfig = {
   // swcMinify: true,
   output: shouldEmitStandalone ? 'standalone' : undefined,
   transpilePackages: ['@repo/ui'],
+  experimental: {
+    // Envíos masivos (hasta 5000 destinatarios) y adjuntos de correo en Base64 (máx. 20 MB) viajan por server actions.
+    serverActions: { bodySizeLimit: '30mb' },
+  },
   eslint: {
     // Por defecto Next sólo analiza app/, components/, lib/, pages/ y src/:
     // 'modules' y 'server' (la mayor parte del código) quedaban sin lint.

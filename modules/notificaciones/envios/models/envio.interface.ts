@@ -1,17 +1,20 @@
 /** @format */
 
-/** Canal por el que sale la notificación. */
-export type CanalEnvio = 'SMS' | 'WHATSAPP' | 'EMAIL';
+/** Historial de notificaciones: SMS (sms_gateway, GET /v1/sms/envios) y correo (email_gateway, GET /v1/email/envios). */
+export type { ISmsEnvio, IFiltroSms, IPaginaSms, EstadoSms } from '@/server/domains/notificaciones/sms/types';
 
-/** Estado final del envío (mismos valores que el log del gateway). */
-export type EstadoEnvio = 'EN_PROCESO' | 'ENVIADO' | 'FALLIDO';
+/** Canal del historial (pestañas). */
+export type CanalHistorial = 'sms' | 'correo';
 
-/** Fila del listado de envíos. */
-export interface IEnvio {
-  envioId: string;
-  canal: CanalEnvio;
-  destino: string;
-  estado: EstadoEnvio;
-  proveedor: string | null;
-  fechaCreacion: string;
+export const ESTADOS_SMS = [
+  { value: 'EN_PROCESO', label: 'En proceso' },
+  { value: 'ENVIADO', label: 'Enviado' },
+  { value: 'FALLIDO', label: 'Fallido' },
+];
+
+/** sms_gateway guarda fechas locales sin zona (LocalDateTime): se muestran tal cual en hora local. */
+export function fechaSms(valor?: string | null): string {
+  if (!valor) return '--';
+  const d = new Date(valor.replace(' ', 'T'));
+  return Number.isNaN(d.getTime()) ? valor : d.toLocaleString('es-CO', { dateStyle: 'short', timeStyle: 'medium' });
 }

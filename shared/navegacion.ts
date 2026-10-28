@@ -28,8 +28,12 @@ export const NAV_ITEMS: NavItem[] = [
   {
     label: "Notificaciones",
     icon: BiMessageSquareDetail,
-    descripcion: "Envíos de SMS, WhatsApp y correo, y su historial.",
-    options: [{ label: "Envíos", href: "/notificaciones/envios" }],
+    descripcion: "Envío de SMS y correo, individual o masivo, y su historial.",
+    options: [
+      { label: "Enviar SMS", href: "/notificaciones/sms" },
+      { label: "Enviar correo", href: "/notificaciones/correo" },
+      { label: "Historial", href: "/notificaciones/envios" },
+    ],
   },
   {
     label: "Administración SMS",

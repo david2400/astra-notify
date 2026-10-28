@@ -3,13 +3,13 @@
 import { BiMessageSquareDetail } from 'react-icons/bi';
 import { EmptyState } from '@/components/feedback/empty-state';
 
-/** Estado inicial mientras no hay envíos (o aún no se conecta el backend). */
-export function EnviosVacio() {
+/** Sin resultados para los filtros actuales. */
+export function EnviosVacio({ canal = 'SMS' }: { canal?: string }) {
   return (
     <EmptyState
       icon={<BiMessageSquareDetail className='size-8' />}
-      title='Todavía no hay envíos'
-      description='Cuando se conecte el gateway de notificaciones, aquí verás cada SMS, WhatsApp o correo con su estado.'
+      title={`No hay envíos de ${canal}`}
+      description='Ajusta los filtros o realiza un envío desde las pestañas Enviar SMS o Enviar correo.'
     />
   );
 }

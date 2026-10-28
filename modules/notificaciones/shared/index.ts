@@ -1,0 +1,10 @@
+export { NotificacionesNav } from './components/notificaciones-nav';
+export { SelectorModo, type ModoEnvio } from './components/selector-modo';
+export { CargaDestinatarios } from './components/carga-destinatarios';
+export { ErrorCarga } from './components/error-carga';
+export { CamposVariables, variablesFaltantes, soloConValor, aplicarVariables, type VariableCampo } from './components/campos-variables';
+export { Bloque, OpcionRadio, AvisoError } from './components/campo';
+export { NOTIFICACIONES_SECCIONES } from './utils/secciones';
+export { leerDestinatarios, descargarCsv, type FilaDestinatario, type LecturaDestinatarios } from './utils/csv';
+export { calcularSegmentos, TELEFONO, normalizarTelefono, type Segmentos } from './utils/sms';
+export { leerBase64, leerTexto, tamano, nuevaClave, localAIso, fechaLocal } from './utils/archivos';
