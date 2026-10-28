@@ -32,10 +32,11 @@ interface Props {
 function Credenciales({ cuenta }: { cuenta: ICuenta }) {
   if (cuenta.clave_configurada) return <Badge variant='default'>Clave cifrada</Badge>;
   if (cuenta.secret_ref) {
-    return cuenta.secret_definido ? (
-      <Badge variant='secondary'>Env: {cuenta.secret_ref}</Badge>
-    ) : (
+    // secret_definido null: notificacion no ve el entorno de sms_gateway (la variable debe existir allá)
+    return cuenta.secret_definido === false ? (
       <Badge variant='destructive'>Falta env {cuenta.secret_ref}</Badge>
+    ) : (
+      <Badge variant='secondary' title='Variable de entorno de sms_gateway'>Env: {cuenta.secret_ref}</Badge>
     );
   }
   return <Badge variant='destructive'>Sin clave</Badge>;

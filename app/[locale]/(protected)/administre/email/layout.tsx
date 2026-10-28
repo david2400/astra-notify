@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 import { SectionShell } from '@/components/layout/section-shell';
 import { EmailAdminNav, RefrescarCacheButton } from '@/modules/administre/email/shared';
 
-/** Administración de email_gateway: encabezado común y pestañas por módulo. */
+/** Administración de email (configuración en notificacion, plantillas y envíos en email_gateway): encabezado y pestañas. */
 export default function AdministreEmailLayout({ children }: { children: ReactNode }) {
   return (
     <SectionShell

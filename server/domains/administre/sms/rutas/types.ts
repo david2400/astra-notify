@@ -1,4 +1,4 @@
-/** Contrato de /admin/rutas (RutaRequest / RutaResponse / PasosRequest / RutaEfectivaResponse). */
+/** Rutas de SMS (notificacion: /api/notificacion/v1/admin/sms/rutas). */
 export interface IPaso {
   id?: number;
   /** 1 = principal, 2.. = respaldo. */
@@ -61,6 +61,9 @@ export interface IRutaEfectiva {
   tipo_mensaje: string;
   /** false: no hay ruta activa con pasos y el envío respondería 422. */
   configurada: boolean;
+  /** Motivo cuando no está configurada (RUTA_NO_CONFIGURADA, TIPO_SIN_MOTOR, ...). */
+  codigo_error?: string | null;
+  detalle?: string | null;
   pasos: IPasoEfectivo[];
   advertencias: string[];
 }

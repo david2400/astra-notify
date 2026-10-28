@@ -1,4 +1,4 @@
-/** Contrato de /admin/proveedores (ProveedorRequest / ProveedorResponse). */
+/** Proveedor de SMS (notificacion: /api/notificacion/v1/admin/sms/proveedores). */
 export interface IProveedor {
   id: number;
   codigo: string;
@@ -11,6 +11,8 @@ export interface IProveedor {
   implementado: boolean;
   /** Cantidad de cuentas registradas. */
   cuentas: number;
+  /** Tipos de mensaje que atiende. */
+  servicios?: string[];
   fecha_creacion?: string | null;
 }
 

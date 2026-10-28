@@ -24,13 +24,13 @@ export default async function AdministreSmsPage() {
   const alertas: string[] = [];
   const lista = [proveedores, cuentas, tipos, rutas, plantillas];
   if (lista.some((r) => r.status === 'rejected')) {
-    alertas.push('No se pudo leer parte de la configuración: verifica que sms_gateway esté disponible.');
+    alertas.push('No se pudo leer parte de la configuración: verifica que notificacion (configuración) y sms_gateway (plantillas) estén disponibles.');
   }
   for (const p of valor(proveedores) ?? []) {
     if (!p.eliminado && !p.implementado) alertas.push(`El proveedor ${p.codigo} no tiene módulo implementado en el gateway.`);
   }
   for (const c of valor(cuentas) ?? []) {
-    const sinClave = !c.clave_configurada && !(c.secret_ref && c.secret_definido);
+    const sinClave = !c.credencial_disponible;
     if (!c.eliminado && c.rutas.length && sinClave) alertas.push(`La cuenta ${c.codigo} se usa en rutas pero no tiene credenciales.`);
   }
   for (const r of valor(rutas) ?? []) {

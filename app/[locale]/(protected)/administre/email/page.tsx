@@ -28,7 +28,7 @@ export default async function AdministreEmailPage() {
 
   const alertas: string[] = [];
   if ([proveedores, cuentas, tipos, rutas, plantillas].some((r) => r.status === 'rejected')) {
-    alertas.push('No se pudo leer parte de la configuración: verifica que email_gateway esté disponible.');
+    alertas.push('No se pudo leer parte de la configuración: verifica que notificacion (configuración) y email_gateway (plantillas y envíos) estén disponibles.');
   }
   const listaCuentas = valor(cuentas) ?? [];
   const enRutas = new Set((valor(rutas) ?? []).filter((r) => !r.eliminado).flatMap((r) => r.pasos.map((p) => p.cuenta)));

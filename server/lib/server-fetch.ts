@@ -352,10 +352,49 @@ export const parametrosFetch = {
   },
 } as const;
 
+// ─── notificacion: administración de canales ────────────────────────────────
+// Proveedores, cuentas, tipos de mensaje, servicios y rutas de SMS y EMAIL viven en notificacion
+// (/api/notificacion/v1/admin/{canal}/...). Los gateways solo leen esa configuración para enviar.
+
+export type CanalAdmin = 'sms' | 'email';
+
+export function rutaNotificacionAdmin(canal: CanalAdmin, path: string): string {
+  const conBarra = path.startsWith('/') ? path : `/${path}`;
+  return `/api/notificacion/v1/admin/${canal}${conBarra}`;
+}
+
+/** Cliente de la administración de un canal en notificacion: los repositorios pasan "/proveedores", "/rutas/efectiva"... */
+export function notificacionAdminFetch(canal: CanalAdmin) {
+  return {
+    async get<T>(path: string, opts?: ServerFetchOptions & { params?: Record<string, unknown> }) {
+      return serverRequest<T>('GET', rutaNotificacionAdmin(canal, path), { ...opts, baseUrl: env.notificacionBaseUrl });
+    },
+
+    async post<T>(path: string, body?: unknown, opts?: ServerFetchOptions) {
+      return serverRequest<T>('POST', rutaNotificacionAdmin(canal, path), { ...opts, body, baseUrl: env.notificacionBaseUrl });
+    },
+
+    async put<T>(path: string, body?: unknown, opts?: ServerFetchOptions) {
+      return serverRequest<T>('PUT', rutaNotificacionAdmin(canal, path), { ...opts, body, baseUrl: env.notificacionBaseUrl });
+    },
+
+    async patch<T>(path: string, body?: unknown, opts?: ServerFetchOptions) {
+      return serverRequest<T>('PATCH', rutaNotificacionAdmin(canal, path), { ...opts, body, baseUrl: env.notificacionBaseUrl });
+    },
+
+    async delete<T>(path: string, opts?: ServerFetchOptions) {
+      return serverRequest<T>('DELETE', rutaNotificacionAdmin(canal, path), { ...opts, baseUrl: env.notificacionBaseUrl });
+    },
+  } as const;
+}
+
+export const smsAdminFetch = notificacionAdminFetch('sms');
+export const emailAdminFetch = notificacionAdminFetch('email');
+
 // ─── sms_gateway client ─────────────────────────────────────────────────────
-// Motor de SMS/WhatsApp (proveedores, cuentas, rutas, plantillas). Sus
-// controladores cuelgan de /api/sms_gateway/v1/sms; los repositorios pasan la
-// ruta del recurso ("/admin/proveedores") y aquí se antepone el prefijo.
+// Motor de SMS/WhatsApp: plantillas (y envíos). Sus controladores cuelgan de
+// /api/sms_gateway/v1/sms; los repositorios pasan la ruta del recurso
+// ("/admin/plantillas") y aquí se antepone el prefijo.
 
 const SMS_GATEWAY_PREFIX = '/api/sms_gateway/v1/sms';
 
@@ -388,7 +427,7 @@ export const smsGatewayFetch = {
 } as const;
 
 // ─── email_gateway client ───────────────────────────────────────────────────
-// Motor de email (Gmail, Brevo, Mock): administración en /api/email_gateway/v1/admin y envíos en
+// Motor de email (Gmail, Brevo, Mock): plantillas en /api/email_gateway/v1/admin/plantillas y envíos en
 // /api/email_gateway/v1/email. Los repositorios pasan "/admin/..." o "/email/..." y aquí se antepone
 // el prefijo. Servicio independiente de sms_gateway (host/puerto propios).
 

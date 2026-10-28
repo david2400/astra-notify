@@ -143,7 +143,7 @@ export function ProveedorEmailManager({ initialData, implementados }: Props) {
       />
 
       {proveedores.length === 0 ? (
-        <EmptyState title='No hay proveedores' description='Ejecuta los scripts de email_gateway o crea el primero.' />
+        <EmptyState title='No hay proveedores' description='Ejecuta admin_canales_datos.sql de notificacion o crea el primero.' />
       ) : (
         <TablaAdmin minWidth={1150}>
           <DataTable data={proveedores} columns={columns} className='py-2' />

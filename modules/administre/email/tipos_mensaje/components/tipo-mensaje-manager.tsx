@@ -103,7 +103,7 @@ export function TipoMensajeEmailManager({ initialData }: { initialData: ITipoMen
       />
 
       {tipos.length === 0 ? (
-        <EmptyState title='No hay tipos de mensaje' description='Ejecuta los scripts de email_gateway o crea OTP y TRANSACCIONAL.' />
+        <EmptyState title='No hay tipos de mensaje' description='Ejecuta admin_canales_datos.sql de notificacion o crea OTP y TRANSACCIONAL.' />
       ) : (
         <TablaAdmin minWidth={900}>
           <DataTable data={tipos} columns={columns} className='py-2' />

@@ -99,7 +99,24 @@ export const env = {
   },
 
   /**
-   * sms_gateway (motor de SMS/WhatsApp y su administración). Servicio propio con prefijo
+   * notificacion: administración centralizada de canales (proveedores, cuentas, tipos de mensaje, servicios y
+   * rutas de SMS y EMAIL) en /api/notificacion/v1/admin/{sms|email}; ver notificacionAdminFetch en server-fetch.ts.
+   */
+  get notificacionBaseUrl(): string {
+    const resolved = process.env.NOTIFICACION_API_URL ?? process.env.NEXT_PUBLIC_NOTIFICACION_API_URL;
+    const devFallback =
+      process.env.NODE_ENV !== 'production'
+        ? `http://localhost:${process.env.DEV_NOTIFICACION_PORT ?? 9001}`
+        : undefined;
+    const url = resolved ?? devFallback ?? '';
+    if (!url) {
+      throw new Error('[env] NOTIFICACION_API_URL is not configured. Set it in your .env file.');
+    }
+    return url.replace(/\/+$/, '');
+  },
+
+  /**
+   * sms_gateway (motor de SMS/WhatsApp: plantillas y envíos; la configuración se administra en notificacion). Servicio propio con prefijo
    * /api/sms_gateway; ver smsGatewayFetch en server-fetch.ts.
    */
   get smsGatewayBaseUrl(): string {
@@ -116,7 +133,7 @@ export const env = {
   },
 
   /**
-   * email_gateway (motor de email y su administración). Servicio propio con prefijo
+   * email_gateway (motor de email: plantillas y envíos; la configuración se administra en notificacion). Servicio propio con prefijo
    * /api/email_gateway; ver emailGatewayFetch en server-fetch.ts.
    */
   get emailGatewayBaseUrl(): string {

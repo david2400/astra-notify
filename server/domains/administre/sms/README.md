@@ -1,13 +1,23 @@
 # server/domains/administre/sms
 
-Acceso (solo servidor) a la administración de **sms_gateway**. Un subdominio por recurso, cada uno con
-el mismo patrón de draco:
+Acceso (solo servidor) a la administración de SMS:
+
+| Recurso | Servicio |
+|---|---|
+| proveedores, cuentas, tipos-mensaje, servicios, rutas, cache | **notificacion** `/api/notificacion/v1/admin/sms/...` (`smsAdminFetch`, `NOTIFICACION_API_URL`, dev `http://localhost:9001`) |
+| plantillas | **sms_gateway** `/api/sms_gateway/v1/sms/admin/plantillas` (`smsGatewayFetch`, `SMS_GATEWAY_API_URL`) |
+
+notificacion identifica proveedores, cuentas y tipos por **código**; las pantallas usan ids. `notificacion.ts`
+tiene el contrato de notificacion y `catalogoSms()`, que traduce id ↔ código; cada `repository.ts` convierte las
+respuestas al tipo de la pantalla (`types.ts`). Las tablas son las unificadas `Canal*` (canal = SMS).
+
+Un subdominio por recurso, cada uno con el mismo patrón de draco:
 
 | Archivo | Uso |
 |---|---|
-| `types.ts` | Contrato del backend (JSON en snake_case, como lo serializa sms_gateway) |
-| `repository.ts` | Llamadas HTTP con `smsGatewayFetch` (`import 'server-only'`) |
+| `types.ts` | Tipos que usan las pantallas (snake_case) |
+| `repository.ts` | Llamadas HTTP (`smsAdminFetch` / `smsGatewayFetch`) y conversión al tipo de la pantalla (`import 'server-only'`) |
 | `queries.ts` | Lecturas para Server Components (envueltas en `cache` de React) |
 | `actions.ts` | Mutaciones (`'use server'`): devuelven `ActionResult`, nunca lanzan |
 
-Base URL: `SMS_GATEWAY_API_URL` (dev: `http://localhost:9002`).
+

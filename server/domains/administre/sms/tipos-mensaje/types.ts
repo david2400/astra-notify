@@ -1,4 +1,4 @@
-/** Contrato de /admin/tipos-mensaje (TipoMensajeRequest / TipoMensajeResponse). */
+/** Tipo de mensaje de SMS (notificacion: /api/notificacion/v1/admin/sms/tipos-mensaje; canal = canal_mensaje). */
 export type CanalMensaje = 'SMS' | 'WHATSAPP';
 
 export interface ITipoMensaje {

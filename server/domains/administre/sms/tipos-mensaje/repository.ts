@@ -1,29 +1,57 @@
 import 'server-only';
 
-import { smsGatewayFetch } from '@/server/lib/server-fetch';
-import { SIN_CACHE, SMS_ADMIN, type IEstadoPayload } from '../constants';
-import type { IActualizarTipoMensaje, ICrearTipoMensaje, IFiltroTiposMensaje, ITipoMensaje } from './types';
+import { smsAdminFetch } from '@/server/lib/server-fetch';
+import { SIN_CACHE, type IEstadoPayload } from '../constants';
+import { catalogoSms, cod, type ITipoMensajeApi } from '../notificacion';
+import type {
+  CanalMensaje,
+  IActualizarTipoMensaje,
+  ICrearTipoMensaje,
+  IFiltroTiposMensaje,
+  ITipoMensaje,
+} from './types';
 
-const BASE = `${SMS_ADMIN}/tipos-mensaje`;
+/** Tipos de mensaje de SMS en notificacion (/admin/sms/tipos-mensaje, por código). */
+const BASE = '/tipos-mensaje';
+
+export const aTipoMensaje = (t: ITipoMensajeApi): ITipoMensaje => ({
+  id: t.id,
+  codigo: t.codigo,
+  descripcion: t.descripcion ?? null,
+  canal: (t.canal_mensaje as CanalMensaje) ?? 'SMS',
+  otp: Boolean(t.otp),
+  masivo: Boolean(t.masivo),
+  eliminado: t.eliminado,
+});
+
+/** canal (SMS | WHATSAPP) de la pantalla = canal_mensaje de notificacion. */
+const aRequest = ({ canal, ...resto }: ICrearTipoMensaje) => ({ ...resto, canal_mensaje: canal });
+
+async function codigoDe(id: number): Promise<string> {
+  return (await catalogoSms({ tipos: true })).codigoTipo(id);
+}
 
 export const tipoMensajeRepository = {
-  list(filtro: IFiltroTiposMensaje = {}): Promise<ITipoMensaje[]> {
-    return smsGatewayFetch.get<ITipoMensaje[]>(BASE, { ...SIN_CACHE, params: { ...filtro } });
+  async list(filtro: IFiltroTiposMensaje = {}): Promise<ITipoMensaje[]> {
+    const params = { canal_mensaje: filtro.canal, otp: filtro.otp, masivo: filtro.masivo };
+    return (await smsAdminFetch.get<ITipoMensajeApi[]>(BASE, { ...SIN_CACHE, params })).map(aTipoMensaje);
   },
 
-  create(payload: ICrearTipoMensaje): Promise<ITipoMensaje> {
-    return smsGatewayFetch.post<ITipoMensaje>(BASE, payload);
+  async create(payload: ICrearTipoMensaje): Promise<ITipoMensaje> {
+    return aTipoMensaje(await smsAdminFetch.post<ITipoMensajeApi>(BASE, aRequest(payload)));
   },
 
-  update({ id, ...payload }: IActualizarTipoMensaje): Promise<ITipoMensaje> {
-    return smsGatewayFetch.put<ITipoMensaje>(`${BASE}/${id}`, payload);
+  /** El código no se puede cambiar (notificacion responde 400). */
+  async update({ id, ...payload }: IActualizarTipoMensaje): Promise<ITipoMensaje> {
+    return aTipoMensaje(await smsAdminFetch.put<ITipoMensajeApi>(`${BASE}/${cod(await codigoDe(id))}`, aRequest(payload)));
   },
 
-  delete(id: number): Promise<void> {
-    return smsGatewayFetch.delete<void>(`${BASE}/${id}`);
+  /** 409 si alguna ruta o servicio lo usa. */
+  async delete(id: number): Promise<void> {
+    await smsAdminFetch.delete<void>(`${BASE}/${cod(await codigoDe(id))}`);
   },
 
-  cambiarEstado(id: number, payload: IEstadoPayload): Promise<ITipoMensaje> {
-    return smsGatewayFetch.patch<ITipoMensaje>(`${BASE}/${id}/estado`, payload);
+  async cambiarEstado(id: number, payload: IEstadoPayload): Promise<ITipoMensaje> {
+    return aTipoMensaje(await smsAdminFetch.patch<ITipoMensajeApi>(`${BASE}/${cod(await codigoDe(id))}/estado`, payload));
   },
 } as const;

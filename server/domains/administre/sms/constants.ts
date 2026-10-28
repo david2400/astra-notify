@@ -1,4 +1,7 @@
-/** Recursos de administración de sms_gateway (el prefijo /api/sms_gateway/v1/sms lo pone smsGatewayFetch). */
+/**
+ * Plantillas de sms_gateway (el prefijo /api/sms_gateway/v1/sms lo pone smsGatewayFetch).
+ * Proveedores, cuentas, tipos de mensaje, servicios y rutas se administran en notificacion (smsAdminFetch).
+ */
 export const SMS_ADMIN = '/admin';
 
 /** Las pantallas de administración siempre leen el estado actual: sin caché de Next. */

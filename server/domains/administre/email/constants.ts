@@ -1,4 +1,7 @@
-/** Recursos de email_gateway (el prefijo /api/email_gateway/v1 lo pone emailGatewayFetch). */
+/**
+ * Recursos de email_gateway: plantillas y envíos (el prefijo /api/email_gateway/v1 lo pone emailGatewayFetch).
+ * Proveedores, cuentas, tipos de mensaje, servicios y rutas se administran en notificacion (emailAdminFetch).
+ */
 export const EMAIL_ADMIN = '/admin';
 export const EMAIL_ENVIOS = '/email';
 
