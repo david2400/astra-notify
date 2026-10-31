@@ -5,7 +5,7 @@ Acceso (solo servidor) a la administración de SMS:
 | Recurso | Servicio |
 |---|---|
 | proveedores, cuentas, tipos-mensaje, servicios, rutas, cache | **notificacion** `/api/notificacion/v1/admin/sms/...` (`smsAdminFetch`, `NOTIFICACION_API_URL`, dev `http://localhost:9001`) |
-| plantillas | **sms_gateway** `/api/sms_gateway/v1/sms/admin/plantillas` (`smsGatewayFetch`, `SMS_GATEWAY_API_URL`) |
+| plantillas | **sms_gateway** por el proxy de notificacion `/api/notificacion/v1/gateway/sms/admin/plantillas` → `/v1/sms/admin/plantillas` (`smsGatewayFetch`) |
 
 notificacion identifica proveedores, cuentas y tipos por **código**; las pantallas usan ids. `notificacion.ts`
 tiene el contrato de notificacion y `catalogoSms()`, que traduce id ↔ código; cada `repository.ts` convierte las

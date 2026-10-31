@@ -1,5 +1,11 @@
-/** Contrato de /v1/sms/send, /v1/sms/batch y /v1/sms/envios (sms_gateway, JSON snake_case). */
+/**
+ * Envíos de SMS por la cola de notificacion (POST /v1/envios/sms y /v1/envios/sms/lote, JSON snake_case) e
+ * historial de entrega de sms_gateway por el proxy de notificacion (GET /v1/gateway/sms/envios).
+ */
 export type EstadoSms = 'EN_PROCESO' | 'ENVIADO' | 'FALLIDO';
+
+/** Estado del envío en la cola de notificacion. */
+export type EstadoCola = 'PENDIENTE' | 'EN_PROCESO' | 'ENVIADO' | 'ACEPTADO' | 'PARCIAL' | 'FALLIDO' | 'CANCELADO';
 
 export interface IEnviarSms {
   tipo_mensaje?: string;
@@ -9,14 +15,25 @@ export interface IEnviarSms {
   message?: string;
   plantilla?: string;
   variables?: Record<string, string>;
+  /** Código o id de la ruta (CanalRuta): ejecuta sus pasos en orden; no se combina con proveedor ni cuenta. */
+  ruta?: string;
   /** Proveedor preferido. */
   proveedor?: string;
   sender?: string;
   cuenta?: string;
+  /** 1 = máxima … 9 = mínima (por defecto 5). */
+  prioridad?: number;
+  /** Referencia del sistema origen (filtrable en la cola). */
+  referencia?: string;
 }
 
 export interface ISmsResultado {
+  /** Id del envío en la cola de notificacion. */
   envio_id: string;
+  /** Id del envío en sms_gateway (cuando ya salió): es el que aparece en el historial. */
+  gateway_envio_id?: string | null;
+  estado_cola?: EstadoCola;
+  proximo_intento?: string | null;
   estado: EstadoSms;
   proveedor?: string | null;
   cuenta?: string | null;
@@ -41,6 +58,8 @@ export interface IEnviarSmsLote {
   proveedor?: string;
   sender?: string;
   cuenta?: string;
+  prioridad?: number;
+  referencia?: string;
   destinations: IDestinatarioSms[];
 }
 
@@ -50,6 +69,12 @@ export interface ISmsLoteResultado {
   total: number;
   enviados: number;
   fallidos: number;
+  /** Destinatarios que siguen en la cola (pendientes o reintentando). */
+  pendientes: number;
+  /** false = la cola aún tiene bloques del lote por enviar: se puede consultar otra vez. */
+  finalizado: boolean;
+  /** Envíos de la cola (bloques) en que notificacion dividió el lote, en orden. */
+  envios: string[];
   /** En el mismo orden de los destinatarios. */
   resultados: ISmsResultado[];
 }

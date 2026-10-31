@@ -6,6 +6,10 @@
 /** Variables que existían antes y ya no se leen: si siguen en el .env se avisa para quitarlas. */
 const OBSOLETAS: Record<string, string> = {
   AUTH_DISABLED: 'el login ya es opcional por defecto; usa AUTH_REQUIRED=true para exigirlo',
+  SMS_GATEWAY_API_URL: 'el frontend ya no llama a sms_gateway: todo pasa por notificacion (NOTIFICACION_API_URL)',
+  NEXT_PUBLIC_SMS_GATEWAY_API_URL: 'el frontend ya no llama a sms_gateway: todo pasa por notificacion (NOTIFICACION_API_URL)',
+  EMAIL_GATEWAY_API_URL: 'el frontend ya no llama a email_gateway: todo pasa por notificacion (NOTIFICACION_API_URL)',
+  NEXT_PUBLIC_EMAIL_GATEWAY_API_URL: 'el frontend ya no llama a email_gateway: todo pasa por notificacion (NOTIFICACION_API_URL)',
 };
 
 const definida = (nombre: string) => Boolean(process.env[nombre]?.trim());
@@ -14,19 +18,11 @@ export function verificarEntorno(): string[] {
   const avisos: string[] = [];
   const produccion = process.env.NODE_ENV === 'production';
 
-  if (!definida('SMS_GATEWAY_API_URL') && !definida('NEXT_PUBLIC_SMS_GATEWAY_API_URL')) {
+  if (!definida('NOTIFICACION_API_URL') && !definida('NEXT_PUBLIC_NOTIFICACION_API_URL')) {
     avisos.push(
       produccion
-        ? 'SMS_GATEWAY_API_URL no está definida: la administración SMS no podrá conectarse al gateway.'
-        : `SMS_GATEWAY_API_URL no está definida: se usa http://localhost:${process.env.DEV_SMS_GATEWAY_PORT ?? 9002}.`,
-    );
-  }
-
-  if (!definida('EMAIL_GATEWAY_API_URL') && !definida('NEXT_PUBLIC_EMAIL_GATEWAY_API_URL')) {
-    avisos.push(
-      produccion
-        ? 'EMAIL_GATEWAY_API_URL no está definida: la administración de email no podrá conectarse al gateway.'
-        : `EMAIL_GATEWAY_API_URL no está definida: se usa http://localhost:${process.env.DEV_EMAIL_GATEWAY_PORT ?? 9003}.`,
+        ? 'NOTIFICACION_API_URL no está definida: la administración y los envíos no podrán conectarse a notificacion.'
+        : `NOTIFICACION_API_URL no está definida: se usa http://localhost:${process.env.DEV_NOTIFICACION_PORT ?? 9001}.`,
     );
   }
 

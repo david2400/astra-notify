@@ -1,6 +1,7 @@
 'use server';
 
 import {
+  cambiarCodigoRutaAction,
   cambiarEstadoRutaAction,
   crearRutaAction,
   eliminarRutaAction,
@@ -27,4 +28,8 @@ export async function cambiarEstadoRutaServerAction(id: number, eliminado: boole
 
 export async function obtenerRutaEfectivaServerAction(filtro: IFiltroRutaEfectiva) {
   return obtenerRutaEfectivaAction(filtro);
+}
+
+export async function cambiarCodigoRutaServerAction(id: number, codigo: string | null) {
+  return cambiarCodigoRutaAction(id, codigo);
 }

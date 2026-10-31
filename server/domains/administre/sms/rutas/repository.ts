@@ -18,6 +18,7 @@ const BASE = '/rutas';
 
 export const aRuta = (r: IRutaApi, cat: CatalogoSms): IRuta => ({
   id: r.id,
+  codigo: r.codigo ?? null,
   proveedor_id: r.central ? null : cat.proveedorId(r.proveedor),
   proveedor_codigo: r.central ? 'CENTRAL' : r.proveedor,
   tipo_mensaje_id: cat.tipoId(r.tipo_mensaje),
@@ -55,6 +56,7 @@ export const rutaRepository = {
   async create(payload: ICrearRuta): Promise<IRuta> {
     const cat = await catalogoSms();
     const body = {
+      codigo: payload.codigo || null,
       proveedor: payload.proveedor_id ? cat.codigoProveedor(payload.proveedor_id) : null,
       tipo_mensaje: cat.codigoTipo(payload.tipo_mensaje_id),
       pasos: aPasos(payload.pasos, cat),
@@ -65,6 +67,12 @@ export const rutaRepository = {
   async reemplazarPasos({ ruta_id, pasos }: IReemplazarPasos): Promise<IRuta> {
     const cat = await catalogoSms();
     return aRuta(await smsAdminFetch.put<IRutaApi>(`${BASE}/${ruta_id}/pasos`, { pasos: aPasos(pasos, cat) }), cat);
+  },
+
+  /** PUT /rutas/{id}/codigo: null quita el código. */
+  async cambiarCodigo(id: number, codigo: string | null): Promise<IRuta> {
+    const cat = await catalogoSms();
+    return aRuta(await smsAdminFetch.put<IRutaApi>(`${BASE}/${id}/codigo`, { codigo }), cat);
   },
 
   async delete(id: number): Promise<void> {

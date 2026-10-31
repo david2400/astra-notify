@@ -45,3 +45,11 @@ export async function obtenerRutaEfectivaAction(filtro: IFiltroRutaEfectiva): Pr
     return handleError(error);
   }
 }
+
+export async function cambiarCodigoRutaAction(id: number, codigo: string | null): Promise<ActionResult<IRuta>> {
+  try {
+    return { success: true, data: await rutaRepository.cambiarCodigo(id, codigo) };
+  } catch (error) {
+    return handleError(error);
+  }
+}

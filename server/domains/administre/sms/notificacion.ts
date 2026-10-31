@@ -70,6 +70,7 @@ export interface IPasoApi {
 export interface IRutaApi extends IAuditoriaApi {
   canal: 'SMS';
   id: number;
+  codigo?: string | null;
   /** CENTRAL o código del proveedor. */
   proveedor: string;
   central: boolean;

@@ -5,6 +5,7 @@
 import { useState } from 'react';
 import { Badge } from '@repo/ui/badges/scenes/badge';
 import { Buttons } from '@repo/ui/buttons/scenes';
+import { consultarSmsLoteServerAction } from '@/app/[locale]/(protected)/notificaciones/sms/actions';
 import { EstadoEnvioBadge } from '@/modules/administre/email/shared';
 import { descargarCsv } from '../../shared';
 import type { ISmsLoteResultado } from '../models/sms.interface';
@@ -14,9 +15,28 @@ const csv = (v: unknown) => {
   return /[",;\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 };
 
-/** Resumen de un envío masivo: totales y detalle por destinatario (en el orden enviado), descargable en CSV. */
-export function ResultadoLoteSms({ resultado, destinos, onNuevo }: { resultado: ISmsLoteResultado; destinos: string[]; onNuevo: () => void }) {
-  const [soloFallidos, setSoloFallidos] = useState(resultado.fallidos > 0);
+/**
+ * Resumen de un envío masivo de la cola de notificacion: totales y detalle por destinatario (en el orden enviado),
+ * descargable en CSV. Mientras queden bloques en la cola se puede consultar otra vez.
+ */
+export function ResultadoLoteSms({ resultado: inicial, destinos, onNuevo }: { resultado: ISmsLoteResultado; destinos: string[]; onNuevo: () => void }) {
+  const [resultado, setResultado] = useState(inicial);
+  const [consultando, setConsultando] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [soloFallidos, setSoloFallidos] = useState(inicial.fallidos > 0);
+
+  const actualizar = async () => {
+    if (!resultado.lote_id) return;
+    setConsultando(true);
+    setError(null);
+    const r = await consultarSmsLoteServerAction(
+      { lote_id: resultado.lote_id, envios: resultado.envios, total_destinatarios: resultado.total },
+      resultado.plantilla,
+    );
+    setConsultando(false);
+    if (r.success) setResultado(r.data);
+    else setError(r.error);
+  };
   const filas = resultado.resultados.map((r, i) => ({ ...r, destino: destinos[i] ?? '' }));
   const visibles = soloFallidos ? filas.filter((f) => f.estado !== 'ENVIADO') : filas;
 
@@ -29,10 +49,11 @@ export function ResultadoLoteSms({ resultado, destinos, onNuevo }: { resultado: 
   return (
     <div role='status' className='space-y-4 rounded-2xl border border-border p-5'>
       <div className='flex flex-wrap items-center gap-3'>
-        <p className='text-lg font-semibold text-foreground'>Envío masivo procesado</p>
+        <p className='text-lg font-semibold text-foreground'>{resultado.finalizado ? 'Envío masivo procesado' : 'Envío masivo en curso'}</p>
         <Badge variant='outline'>{resultado.total} total</Badge>
         <Badge variant='default'>{resultado.enviados} enviados</Badge>
         {resultado.fallidos ? <Badge variant='destructive'>{resultado.fallidos} fallidos</Badge> : null}
+        {resultado.pendientes ? <Badge variant='outline'>{resultado.pendientes} en cola</Badge> : null}
         {resultado.lote_id ? <span className='font-mono text-xs text-muted-foreground'>Lote {resultado.lote_id}</span> : null}
       </div>
       <div className='flex flex-wrap items-center gap-3'>
@@ -41,8 +62,14 @@ export function ResultadoLoteSms({ resultado, destinos, onNuevo }: { resultado: 
           Solo no enviados
         </label>
         <Buttons type='button' size='sm' variant='outline' onClick={descargar}>Descargar resultado (CSV)</Buttons>
+        {!resultado.finalizado && resultado.lote_id ? (
+          <Buttons type='button' size='sm' variant='outline' loading={consultando} disabled={consultando} onClick={actualizar}>
+            Actualizar
+          </Buttons>
+        ) : null}
         <Buttons type='button' size='sm' onClick={onNuevo}>Nuevo envío</Buttons>
       </div>
+      {error ? <p className='text-sm text-destructive'>{error}</p> : null}
       {visibles.length ? (
         <div className='max-h-96 overflow-auto rounded-xl border border-border'>
           <table className='w-full text-sm'>
@@ -68,7 +95,7 @@ export function ResultadoLoteSms({ resultado, destinos, onNuevo }: { resultado: 
           {visibles.length > 500 ? <p className='p-2 text-center text-xs text-muted-foreground'>Se muestran 500 de {visibles.length}; descarga el CSV para ver todos.</p> : null}
         </div>
       ) : (
-        <p className='text-sm text-muted-foreground'>Todos los SMS se enviaron.</p>
+        <p className='text-sm text-muted-foreground'>{soloFallidos ? 'Ningún SMS quedó sin enviar.' : 'Sin destinatarios.'}</p>
       )}
     </div>
   );

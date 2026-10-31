@@ -10,7 +10,8 @@ import { DataTable } from '@repo/ui/table/scenes';
 import { Modal } from '@repo/ui/modals/scenes';
 import { Buttons } from '@repo/ui/buttons/scenes';
 import { Badge } from '@repo/ui/badges/scenes/badge';
-import { cambiarEstadoRutaEmailServerAction } from '@/app/[locale]/(protected)/administre/email/rutas/actions';
+import Swal from 'sweetalert2';
+import { cambiarCodigoRutaEmailServerAction, cambiarEstadoRutaEmailServerAction } from '@/app/[locale]/(protected)/administre/email/rutas/actions';
 import { EmptyState } from '@/components/feedback/empty-state';
 import type { ICuenta } from '@/server/domains/administre/email/cuentas/types';
 import type { IProveedor } from '@/server/domains/administre/email/proveedores/types';
@@ -21,6 +22,7 @@ import { TablaAdmin } from '../../shared/components/tabla-admin';
 import { NativeSelect } from '../../shared/components/native-select';
 import { confirmar, ejecutarAccion } from '../../shared/utils/feedback';
 import { CENTRAL, type IRuta } from '../models/ruta.interface';
+import { codigoRutaSchema } from '../schemas/ruta.schema';
 import { RegisterRuta, UpdatePasos } from './form';
 import { RutaEfectiva } from './ruta-efectiva';
 
@@ -60,6 +62,35 @@ export function RutaEmailManager({ initialData, cuentas, proveedores, tipos }: P
     [origen, rutas],
   );
 
+  /** Código para pedir la ruta en el envío (campo `ruta`); vacío lo quita. */
+  const cambiarCodigo = async (r: IRuta) => {
+    const { value, isConfirmed } = await Swal.fire({
+      title: `Código de la ruta ${origenDe(r)} / ${r.tipo_mensaje}`,
+      text: 'Se usa en el campo "ruta" del envío (también sirve el id ' + r.id + '). Déjalo vacío para quitarlo.',
+      input: 'text',
+      inputValue: r.codigo ?? '',
+      inputPlaceholder: 'OTP_PRIORITARIA',
+      inputAttributes: { maxlength: '50', autocapitalize: 'characters' },
+      showCancelButton: true,
+      confirmButtonText: 'Guardar',
+      cancelButtonText: 'Cancelar',
+      inputValidator: (v) => {
+        const r2 = codigoRutaSchema.safeParse(v ?? '');
+        return r2.success ? null : (r2.error.issues[0]?.message ?? 'Código inválido');
+      },
+    });
+    if (!isConfirmed) return;
+    const codigo = String(value ?? '').trim().toUpperCase() || null;
+    if (codigo === (r.codigo ?? null)) return;
+    setProcesandoId(r.id);
+    const ok = await ejecutarAccion(() => cambiarCodigoRutaEmailServerAction(r.id, codigo), {
+      exito: codigo ? `Código ${codigo} guardado` : 'Código quitado',
+      error: 'No se pudo cambiar el código.',
+    });
+    setProcesandoId(null);
+    if (ok) router.refresh();
+  };
+
   const cambiarEstado = async (r: IRuta) => {
     const desactivar = !r.eliminado;
     if (!(await confirmar(desactivar ? '¿Desactivar la ruta?' : '¿Activar la ruta?', desactivar ? 'Los envíos de ese tipo responderán 422 RUTA_NO_CONFIGURADA.' : undefined))) return;
@@ -83,6 +114,17 @@ export function RutaEmailManager({ initialData, cuentas, proveedores, tipos }: P
             <span className='font-semibold text-foreground'>{row.original.proveedor}</span>
           ) : (
             <Badge variant='counter'>Central</Badge>
+          ),
+      },
+      {
+        id: 'codigo',
+        accessorFn: (r) => r.codigo ?? '',
+        header: 'Código',
+        cell: ({ row }) =>
+          row.original.codigo ? (
+            <span className='font-mono text-xs font-semibold text-foreground'>{row.original.codigo}</span>
+          ) : (
+            <span className='text-xs text-muted-foreground'>id {row.original.id}</span>
           ),
       },
       {
@@ -129,6 +171,9 @@ export function RutaEmailManager({ initialData, cuentas, proveedores, tipos }: P
           <div className='flex flex-wrap gap-2'>
             <Buttons size='sm' variant='outline' onClick={() => setEditando(row.original)}>
               Pasos
+            </Buttons>
+            <Buttons size='sm' variant='outline' disabled={procesandoId === row.original.id} onClick={() => cambiarCodigo(row.original)}>
+              Código
             </Buttons>
             <Buttons size='sm' variant='outline' onClick={() => setViendo(row.original)}>
               Simular

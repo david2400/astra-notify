@@ -1,6 +1,8 @@
 'use server';
 
 import {
+  consultarSmsAction,
+  consultarSmsLoteAction,
   enviarSmsAction,
   enviarSmsLoteAction,
   type IEnviarSms,
@@ -13,4 +15,15 @@ export async function enviarSmsServerAction(payload: IEnviarSms, idempotencyKey?
 
 export async function enviarSmsLoteServerAction(payload: IEnviarSmsLote) {
   return enviarSmsLoteAction(payload);
+}
+
+export async function consultarSmsServerAction(envioId: string) {
+  return consultarSmsAction(envioId);
+}
+
+export async function consultarSmsLoteServerAction(
+  lote: { lote_id: string; envios: string[]; total_destinatarios: number },
+  plantilla?: string | null,
+) {
+  return consultarSmsLoteAction(lote, plantilla);
 }

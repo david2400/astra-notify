@@ -12,6 +12,8 @@ export interface IPaso {
 
 export interface IRuta {
   id: number;
+  /** Código para pedir la ruta en el envío (campo `ruta` de /v1/envios/sms); null = sin código. */
+  codigo: string | null;
   /** null = ruta del endpoint central (/v1/sms/send). */
   proveedor_id: number | null;
   /** CENTRAL o código del proveedor. */
@@ -30,6 +32,8 @@ export interface IPasoPayload {
 }
 
 export interface ICrearRuta {
+  /** Opcional, único por canal (se guarda en mayúsculas). */
+  codigo?: string | null;
   proveedor_id: number | null;
   tipo_mensaje_id: number;
   pasos?: IPasoPayload[];

@@ -39,6 +39,7 @@ export function RegisterRuta({
         const ok = await ejecutarAccion(
           () =>
             crearRutaServerAction({
+              codigo: values.codigo.trim().toUpperCase() || null,
               proveedor_id: values.proveedor_id ? Number(values.proveedor_id) : null,
               tipo_mensaje_id: Number(values.tipo_mensaje_id),
               pasos: toPasos(values.pasos),

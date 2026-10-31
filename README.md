@@ -15,6 +15,23 @@ pnpm --filter astra-notify dev        # http://localhost:3000
 
 Scripts: `dev`, `build`, `start`, `lint`, `check-types`.
 
+## Backend: solo notificacion
+
+El frontend habla **solo con notificacion** (`NOTIFICACION_API_URL`, dev `http://localhost:9001`; con
+`NOTIFICACION_SECURITY_ENABLED=true` en notificacion se envía `X-API-Key` = `NOTIFICACION_API_KEY`). Clientes en
+`server/lib/server-fetch.ts`:
+
+| Cliente | Ruta en notificacion | Uso |
+|---|---|---|
+| `smsAdminFetch` / `emailAdminFetch` | `/api/notificacion/v1/admin/{sms\|email}` | Proveedores, cuentas, tipos, servicios y rutas (con `codigo`, `PUT /rutas/{id}/codigo`) |
+| `notificacionFetch` | `/api/notificacion/v1/envios` | Envíos de SMS y correo por la cola (`POST /v1/envios/{sms\|email}[/lote]`, 202) y su estado |
+| `smsGatewayFetch` | `/api/notificacion/v1/gateway/sms` → sms_gateway `/v1/sms` | Plantillas e historial de entrega (proxy) |
+| `emailGatewayFetch` | `/api/notificacion/v1/gateway/email` → email_gateway `/v1` | Plantillas, historial, lotes y envío de prueba (proxy) |
+
+Los envíos individuales esperan unos segundos el resultado de la cola (si queda en reintento se muestra "en
+proceso" con botón para actualizar). El SMS individual acepta `ruta` (código o id de la ruta): se ejecutan sus
+pasos en orden y no se combina con proveedor ni cuenta. `SMS_GATEWAY_API_URL` y `EMAIL_GATEWAY_API_URL` ya no se usan.
+
 ## Estructura
 
 ```
@@ -45,7 +62,8 @@ types/next-auth.d.ts        campos extra de la sesión
 
 ## Administración SMS (`/administre/sms`)
 
-Pantallas sobre la API de administración de **sms_gateway** (`SMS_GATEWAY_API_URL`, dev `http://localhost:9002`).
+Pantallas sobre **notificacion** (`NOTIFICACION_API_URL`, dev `http://localhost:9001`): configuración en
+`/api/notificacion/v1/admin/sms` y plantillas de sms_gateway por su proxy `/api/notificacion/v1/gateway/sms`.
 Cada función es un módulo independiente con el mismo patrón:
 
 | Módulo | Ruta | Qué hace |
@@ -66,7 +84,8 @@ Código: `modules/administre/sms/<modulo>` (UI), `server/domains/administre/sms/
 ## Administración Email (`/administre/email`)
 
 Módulo **independiente** del de SMS (otro servicio, otro cliente HTTP y otros contratos) sobre
-**email_gateway** (`EMAIL_GATEWAY_API_URL`, dev `http://localhost:9003`, cliente `emailGatewayFetch`).
+**notificacion** (`/api/notificacion/v1/admin/email`; plantillas e historial de email_gateway por el proxy
+`/api/notificacion/v1/gateway/email`, cliente `emailGatewayFetch`).
 No importa nada de `administre/sms`: tiene su propio `shared`.
 
 | Módulo | Ruta | Qué hace |

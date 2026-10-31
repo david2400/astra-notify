@@ -1,6 +1,7 @@
 'use server';
 
 import {
+  cambiarCodigoRutaEmailAction,
   cambiarEstadoRutaEmailAction,
   crearRutaEmailAction,
   obtenerRutaEfectivaEmailAction,
@@ -24,4 +25,8 @@ export async function cambiarEstadoRutaEmailServerAction(id: number, eliminado: 
 
 export async function obtenerRutaEfectivaEmailServerAction(filtro: IFiltroRutaEfectiva) {
   return obtenerRutaEfectivaEmailAction(filtro);
+}
+
+export async function cambiarCodigoRutaEmailServerAction(id: number, codigo: string | null) {
+  return cambiarCodigoRutaEmailAction(id, codigo);
 }

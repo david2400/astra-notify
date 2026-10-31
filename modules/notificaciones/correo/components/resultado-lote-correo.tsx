@@ -7,7 +7,7 @@ import { Buttons } from '@repo/ui/buttons/scenes';
 import { Link } from '@/shared/i18n/routing';
 import type { IEmailLoteResultado } from '../models/correo.interface';
 
-/** Resultado de POST /v1/email/lotes: aceptados (encolados) y errores por destinatario (fila del CSV = índice + 1). */
+/** Resultado de un lote encolado en notificacion: aceptados, en cola y errores por destinatario (fila del CSV = índice + 1). */
 export function ResultadoLoteCorreo({ resultado, lineas, onNuevo, onCorregir }: { resultado: IEmailLoteResultado; lineas: number[]; onNuevo: () => void; onCorregir: () => void }) {
   const rechazadoTodo = resultado.aceptados === 0 && resultado.rechazados > 0;
   const errores = resultado.errores ?? [];
@@ -18,6 +18,7 @@ export function ResultadoLoteCorreo({ resultado, lineas, onNuevo, onCorregir }: 
         <Badge variant='outline'>{resultado.total} total</Badge>
         <Badge variant='default'>{resultado.aceptados} aceptados</Badge>
         {resultado.rechazados ? <Badge variant='destructive'>{resultado.rechazados} con error</Badge> : null}
+        {resultado.en_cola ? <Badge variant='outline'>{resultado.en_cola} aún en la cola</Badge> : null}
       </div>
       {resultado.lote_id ? (
         <p className='text-sm text-muted-foreground'>

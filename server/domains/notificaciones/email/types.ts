@@ -1,5 +1,9 @@
-/** Contrato de POST /v1/email/send y /v1/email/lotes (email_gateway, JSON snake_case). */
+/**
+ * Envíos de correo por la cola de notificacion (POST /v1/envios/email y /v1/envios/email/lote, JSON snake_case);
+ * los campos del correo son los de email_gateway.
+ */
 import type { EstadoEnvio } from '@/server/domains/administre/email/envios/types';
+import type { EstadoCola } from '../sms/types';
 
 export interface IDireccionEmail {
   email: string;
@@ -34,11 +38,18 @@ export interface IEnviarEmail {
   /** ISO-8601 UTC. */
   programado_para?: string;
   idempotency_key?: string;
+  /** Referencia del sistema origen (filtrable en la cola). */
+  referencia?: string;
+  /** Solo del formulario: SINCRONO = esperar unos segundos el resultado del proveedor (no se envía a notificacion). */
   modo?: 'ASINCRONO' | 'SINCRONO';
 }
 
 export interface IEmailResultado {
+  /** Id del envío en la cola de notificacion. */
   envio_id: string;
+  /** Id del envío en email_gateway (cuando la cola ya se lo entregó): es el del historial. */
+  gateway_envio_id?: string | null;
+  estado_cola?: EstadoCola;
   estado: EstadoEnvio;
   duplicado: boolean;
   tipo_mensaje?: string;
@@ -85,6 +96,8 @@ export interface IEmailLoteResultado {
   total: number;
   aceptados: number;
   rechazados: number;
+  /** Destinatarios cuyo bloque sigue en la cola de notificacion (se enviarán). */
+  en_cola?: number;
   envios?: { indice: number; email: string; referencia?: string; envio_id: string }[];
   errores?: { indice: number; email: string; codigo: string; mensaje: string; variables?: { variable?: string; codigo: string; mensaje: string }[] }[];
 }

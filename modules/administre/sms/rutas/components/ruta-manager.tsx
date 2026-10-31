@@ -10,7 +10,9 @@ import { DataTable } from '@repo/ui/table/scenes';
 import { Modal } from '@repo/ui/modals/scenes';
 import { Buttons } from '@repo/ui/buttons/scenes';
 import { Badge } from '@repo/ui/badges/scenes/badge';
+import Swal from 'sweetalert2';
 import {
+  cambiarCodigoRutaServerAction,
   cambiarEstadoRutaServerAction,
   eliminarRutaServerAction,
 } from '@/app/[locale]/(protected)/administre/sms/rutas/actions';
@@ -24,6 +26,7 @@ import { TablaAdmin } from '../../shared/components/tabla-admin';
 import { NativeSelect } from '../../shared/components/native-select';
 import { confirmar, ejecutarAccion } from '../../shared/utils/feedback';
 import { CENTRAL, type IRuta } from '../models/ruta.interface';
+import { codigoRutaSchema } from '../schemas/ruta.schema';
 import { RegisterRuta, UpdatePasos } from './form';
 import { RutaEfectiva } from './ruta-efectiva';
 
@@ -65,6 +68,35 @@ export function RutaManager({ initialData, cuentas, proveedores, tipos }: Props)
     if (ok !== null) router.refresh();
   };
 
+  /** Código para pedir la ruta en el envío (campo `ruta`); vacío lo quita. */
+  const cambiarCodigo = async (r: IRuta) => {
+    const { value, isConfirmed } = await Swal.fire({
+      title: `Código de la ruta ${r.proveedor_codigo} / ${r.tipo_mensaje}`,
+      text: 'Se usa en el campo "ruta" del envío (también sirve el id ' + r.id + '). Déjalo vacío para quitarlo.',
+      input: 'text',
+      inputValue: r.codigo ?? '',
+      inputPlaceholder: 'OTP_PRIORITARIA',
+      inputAttributes: { maxlength: '50', autocapitalize: 'characters' },
+      showCancelButton: true,
+      confirmButtonText: 'Guardar',
+      cancelButtonText: 'Cancelar',
+      inputValidator: (v) => {
+        const r2 = codigoRutaSchema.safeParse(v ?? '');
+        return r2.success ? null : (r2.error.issues[0]?.message ?? 'Código inválido');
+      },
+    });
+    if (!isConfirmed) return;
+    const codigo = String(value ?? '').trim().toUpperCase() || null;
+    if (codigo === (r.codigo ?? null)) return;
+    setProcesandoId(r.id);
+    const ok = await ejecutarAccion(() => cambiarCodigoRutaServerAction(r.id, codigo), {
+      exito: codigo ? `Código ${codigo} guardado` : 'Código quitado',
+      error: 'No se pudo cambiar el código.',
+    });
+    setProcesandoId(null);
+    if (ok) router.refresh();
+  };
+
   const cambiarEstado = async (r: IRuta) => {
     const desactivar = !r.eliminado;
     if (!(await confirmar(desactivar ? '¿Desactivar la ruta?' : '¿Activar la ruta?'))) return;
@@ -87,6 +119,17 @@ export function RutaManager({ initialData, cuentas, proveedores, tipos }: Props)
             <Badge variant='counter'>Central</Badge>
           ) : (
             <span className='font-semibold text-foreground'>{row.original.proveedor_codigo}</span>
+          ),
+      },
+      {
+        id: 'codigo',
+        accessorFn: (r) => r.codigo ?? '',
+        header: 'Código',
+        cell: ({ row }) =>
+          row.original.codigo ? (
+            <span className='font-mono text-xs font-semibold text-foreground'>{row.original.codigo}</span>
+          ) : (
+            <span className='text-xs text-muted-foreground'>id {row.original.id}</span>
           ),
       },
       {
@@ -132,6 +175,9 @@ export function RutaManager({ initialData, cuentas, proveedores, tipos }: Props)
           <div className='flex flex-wrap gap-2'>
             <Buttons size='sm' variant='outline' onClick={() => setEditando(row.original)}>
               Pasos
+            </Buttons>
+            <Buttons size='sm' variant='outline' disabled={procesandoId === row.original.id} onClick={() => cambiarCodigo(row.original)}>
+              Código
             </Buttons>
             <Buttons size='sm' variant='outline' onClick={() => setViendo(row.original)}>
               Ruta efectiva

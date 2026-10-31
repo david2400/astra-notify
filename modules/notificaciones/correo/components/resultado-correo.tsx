@@ -18,7 +18,7 @@ const TITULOS: Record<string, string> = {
   EN_PROCESO: 'Correo en proceso',
 };
 
-/** Resultado de un correo individual: 202 (encolado), 200 (SINCRONO finalizado o duplicado). */
+/** Resultado de un correo individual encolado en notificacion (con el estado del proveedor si se esperó). */
 export function ResultadoCorreo({ resultado, destino, onNuevo }: { resultado: IEmailResultado; destino: string; onNuevo: () => void }) {
   const ok = resultado.estado === 'ENVIADO';
   const fallo = resultado.estado === 'FALLIDO' || resultado.estado === 'CANCELADO';
@@ -40,8 +40,11 @@ export function ResultadoCorreo({ resultado, destino, onNuevo }: { resultado: IE
       </div>
       <dl className='grid grid-cols-2 gap-3 text-sm sm:grid-cols-4'>
         <div>
-          <dt className='text-xs text-muted-foreground'>Envío</dt>
+          <dt className='text-xs text-muted-foreground'>Envío (notificacion)</dt>
           <dd className='break-all font-mono text-xs'>{resultado.envio_id}</dd>
+          {resultado.gateway_envio_id ? (
+            <dd className='break-all font-mono text-[11px] text-muted-foreground'>email_gateway {resultado.gateway_envio_id}</dd>
+          ) : null}
         </div>
         <div>
           <dt className='text-xs text-muted-foreground'>Tipo</dt>
@@ -62,7 +65,7 @@ export function ResultadoCorreo({ resultado, destino, onNuevo }: { resultado: IE
           {resultado.detalle_error}
         </p>
       ) : null}
-      {!ok && !fallo ? <p className='text-xs text-muted-foreground'>El gateway procesa la cola en segundo plano; consulta el estado y la entrega en el historial.</p> : null}
+      {!ok && !fallo ? <p className='text-xs text-muted-foreground'>La cola de notificacion lo entrega a email_gateway, que lo envía en segundo plano; consulta el estado y la entrega en el historial.</p> : null}
       <div className='flex flex-wrap gap-2'>
         <Buttons type='button' onClick={onNuevo}>Enviar otro</Buttons>
         <Link href={`/notificaciones/envios/correo?destino=${encodeURIComponent(destino)}`} className='inline-flex items-center rounded-md border border-border px-3 text-sm hover:bg-muted'>

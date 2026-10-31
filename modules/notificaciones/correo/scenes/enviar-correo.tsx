@@ -480,7 +480,7 @@ export function EnviarCorreoScene({ tipos, plantillas, proveedores, cuentas, err
         {modo === 'individual' ? (
           <label className={`flex items-center gap-2 text-sm ${programar ? 'opacity-50' : ''}`}>
             <input type='checkbox' disabled={programar} checked={esperar && !programar} onChange={(e) => setEsperar(e.target.checked)} className='accent-primary' />
-            Esperar el resultado del proveedor (modo síncrono)
+            Esperar el resultado del proveedor (hasta 20 s)
           </label>
         ) : null}
         <details>

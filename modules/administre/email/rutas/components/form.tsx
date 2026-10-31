@@ -36,6 +36,7 @@ export function RegisterRuta({
         const ok = await ejecutarAccion(
           () =>
             crearRutaEmailServerAction({
+              codigo: values.codigo.trim().toUpperCase() || null,
               proveedor: values.proveedor || null,
               tipo_mensaje: values.tipo_mensaje,
               pasos: toPasos(values.pasos),

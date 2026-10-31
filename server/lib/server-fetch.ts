@@ -352,111 +352,97 @@ export const parametrosFetch = {
   },
 } as const;
 
-// ─── notificacion: administración de canales ────────────────────────────────
-// Proveedores, cuentas, tipos de mensaje, servicios y rutas de SMS y EMAIL viven en notificacion
+// ─── notificacion ───────────────────────────────────────────────────────────
+// Único backend de notificaciones: administración de canales, envíos (cola asíncrona) y, por su proxy,
+// plantillas e historial de entrega de los gateways. Con NOTIFICACION_API_KEY se agrega X-API-Key.
+
+const NOTIFICACION_PREFIX = '/api/notificacion';
+
+function conBarra(path: string): string {
+  return path.startsWith('/') ? path : `/${path}`;
+}
+
+/** Cliente de notificacion con el prefijo indicado ('/api/notificacion/v1/...'). */
+function clienteNotificacion(prefijo: string) {
+  const ruta = (path: string) => {
+    const p = conBarra(path);
+    return p === prefijo || p.startsWith(`${prefijo}/`) ? p : `${prefijo}${p}`;
+  };
+  const conClave = <O extends ServerFetchOptions>(opts?: O): O & { baseUrl: string } => {
+    const key = env.notificacionApiKey;
+    return {
+      ...(opts as O),
+      baseUrl: env.notificacionBaseUrl,
+      headers: key ? { 'X-API-Key': key, ...opts?.headers } : opts?.headers,
+    };
+  };
+  // async: si falta la URL el error llega como promesa rechazada (Promise.allSettled lo atrapa).
+  return {
+    async get<T>(path: string, opts?: ServerFetchOptions & { params?: Record<string, unknown> }) {
+      return serverRequest<T>('GET', ruta(path), conClave(opts));
+    },
+
+    async post<T>(path: string, body?: unknown, opts?: ServerFetchOptions) {
+      return serverRequest<T>('POST', ruta(path), { ...conClave(opts), body });
+    },
+
+    async put<T>(path: string, body?: unknown, opts?: ServerFetchOptions) {
+      return serverRequest<T>('PUT', ruta(path), { ...conClave(opts), body });
+    },
+
+    async patch<T>(path: string, body?: unknown, opts?: ServerFetchOptions) {
+      return serverRequest<T>('PATCH', ruta(path), { ...conClave(opts), body });
+    },
+
+    async delete<T>(path: string, opts?: ServerFetchOptions) {
+      return serverRequest<T>('DELETE', ruta(path), conClave(opts));
+    },
+  } as const;
+}
+
+/** notificacion sin prefijo de recurso: los repositorios pasan "/v1/envios/sms", "/v1/envios/{id}"... */
+export const notificacionFetch = clienteNotificacion(NOTIFICACION_PREFIX);
+
+// Administración de canales: proveedores, cuentas, tipos de mensaje, servicios y rutas de SMS y EMAIL
 // (/api/notificacion/v1/admin/{canal}/...). Los gateways solo leen esa configuración para enviar.
 
 export type CanalAdmin = 'sms' | 'email';
 
 export function rutaNotificacionAdmin(canal: CanalAdmin, path: string): string {
-  const conBarra = path.startsWith('/') ? path : `/${path}`;
-  return `/api/notificacion/v1/admin/${canal}${conBarra}`;
+  return `${NOTIFICACION_PREFIX}/v1/admin/${canal}${conBarra(path)}`;
 }
 
 /** Cliente de la administración de un canal en notificacion: los repositorios pasan "/proveedores", "/rutas/efectiva"... */
 export function notificacionAdminFetch(canal: CanalAdmin) {
-  return {
-    async get<T>(path: string, opts?: ServerFetchOptions & { params?: Record<string, unknown> }) {
-      return serverRequest<T>('GET', rutaNotificacionAdmin(canal, path), { ...opts, baseUrl: env.notificacionBaseUrl });
-    },
-
-    async post<T>(path: string, body?: unknown, opts?: ServerFetchOptions) {
-      return serverRequest<T>('POST', rutaNotificacionAdmin(canal, path), { ...opts, body, baseUrl: env.notificacionBaseUrl });
-    },
-
-    async put<T>(path: string, body?: unknown, opts?: ServerFetchOptions) {
-      return serverRequest<T>('PUT', rutaNotificacionAdmin(canal, path), { ...opts, body, baseUrl: env.notificacionBaseUrl });
-    },
-
-    async patch<T>(path: string, body?: unknown, opts?: ServerFetchOptions) {
-      return serverRequest<T>('PATCH', rutaNotificacionAdmin(canal, path), { ...opts, body, baseUrl: env.notificacionBaseUrl });
-    },
-
-    async delete<T>(path: string, opts?: ServerFetchOptions) {
-      return serverRequest<T>('DELETE', rutaNotificacionAdmin(canal, path), { ...opts, baseUrl: env.notificacionBaseUrl });
-    },
-  } as const;
+  return clienteNotificacion(`${NOTIFICACION_PREFIX}/v1/admin/${canal}`);
 }
 
 export const smsAdminFetch = notificacionAdminFetch('sms');
 export const emailAdminFetch = notificacionAdminFetch('email');
 
-// ─── sms_gateway client ─────────────────────────────────────────────────────
-// Motor de SMS/WhatsApp: plantillas (y envíos). Sus controladores cuelgan de
-// /api/sms_gateway/v1/sms; los repositorios pasan la ruta del recurso
-// ("/admin/plantillas") y aquí se antepone el prefijo.
+// ─── sms_gateway por notificacion ───────────────────────────────────────────
+// Plantillas e historial de entrega de sms_gateway a través del proxy de notificacion:
+// /api/notificacion/v1/gateway/sms/{admin/plantillas|envios} → sms_gateway /v1/sms/... (mismo contrato).
+// Los repositorios pasan "/admin/plantillas", "/envios"...
 
-const SMS_GATEWAY_PREFIX = '/api/sms_gateway/v1/sms';
+const SMS_GATEWAY_PREFIX = `${NOTIFICACION_PREFIX}/v1/gateway/sms`;
 
 export function rutaSmsGateway(path: string): string {
-  const conBarra = path.startsWith('/') ? path : `/${path}`;
-  return conBarra.startsWith(`${SMS_GATEWAY_PREFIX}/`) ? conBarra : `${SMS_GATEWAY_PREFIX}${conBarra}`;
+  const p = conBarra(path);
+  return p.startsWith(`${SMS_GATEWAY_PREFIX}/`) ? p : `${SMS_GATEWAY_PREFIX}${p}`;
 }
 
-// async: si falta SMS_GATEWAY_API_URL el error llega como promesa rechazada (Promise.allSettled lo atrapa).
-export const smsGatewayFetch = {
-  async get<T>(path: string, opts?: ServerFetchOptions & { params?: Record<string, unknown> }) {
-    return serverRequest<T>('GET', rutaSmsGateway(path), { ...opts, baseUrl: env.smsGatewayBaseUrl });
-  },
+export const smsGatewayFetch = clienteNotificacion(SMS_GATEWAY_PREFIX);
 
-  async post<T>(path: string, body?: unknown, opts?: ServerFetchOptions) {
-    return serverRequest<T>('POST', rutaSmsGateway(path), { ...opts, body, baseUrl: env.smsGatewayBaseUrl });
-  },
+// ─── email_gateway por notificacion ─────────────────────────────────────────
+// /api/notificacion/v1/gateway/email/{admin/plantillas|email/envios|email/lotes|email/send} → email_gateway /v1/...
+// Los repositorios pasan "/admin/..." o "/email/...".
 
-  async put<T>(path: string, body?: unknown, opts?: ServerFetchOptions) {
-    return serverRequest<T>('PUT', rutaSmsGateway(path), { ...opts, body, baseUrl: env.smsGatewayBaseUrl });
-  },
-
-  async patch<T>(path: string, body?: unknown, opts?: ServerFetchOptions) {
-    return serverRequest<T>('PATCH', rutaSmsGateway(path), { ...opts, body, baseUrl: env.smsGatewayBaseUrl });
-  },
-
-  async delete<T>(path: string, opts?: ServerFetchOptions) {
-    return serverRequest<T>('DELETE', rutaSmsGateway(path), { ...opts, baseUrl: env.smsGatewayBaseUrl });
-  },
-} as const;
-
-// ─── email_gateway client ───────────────────────────────────────────────────
-// Motor de email (Gmail, Brevo, Mock): plantillas en /api/email_gateway/v1/admin/plantillas y envíos en
-// /api/email_gateway/v1/email. Los repositorios pasan "/admin/..." o "/email/..." y aquí se antepone
-// el prefijo. Servicio independiente de sms_gateway (host/puerto propios).
-
-const EMAIL_GATEWAY_PREFIX = '/api/email_gateway/v1';
+const EMAIL_GATEWAY_PREFIX = `${NOTIFICACION_PREFIX}/v1/gateway/email`;
 
 export function rutaEmailGateway(path: string): string {
-  const conBarra = path.startsWith('/') ? path : `/${path}`;
-  return conBarra.startsWith(`${EMAIL_GATEWAY_PREFIX}/`) ? conBarra : `${EMAIL_GATEWAY_PREFIX}${conBarra}`;
+  const p = conBarra(path);
+  return p.startsWith(`${EMAIL_GATEWAY_PREFIX}/`) ? p : `${EMAIL_GATEWAY_PREFIX}${p}`;
 }
 
-// async: si falta EMAIL_GATEWAY_API_URL el error llega como promesa rechazada (Promise.allSettled lo atrapa).
-export const emailGatewayFetch = {
-  async get<T>(path: string, opts?: ServerFetchOptions & { params?: Record<string, unknown> }) {
-    return serverRequest<T>('GET', rutaEmailGateway(path), { ...opts, baseUrl: env.emailGatewayBaseUrl });
-  },
-
-  async post<T>(path: string, body?: unknown, opts?: ServerFetchOptions) {
-    return serverRequest<T>('POST', rutaEmailGateway(path), { ...opts, body, baseUrl: env.emailGatewayBaseUrl });
-  },
-
-  async put<T>(path: string, body?: unknown, opts?: ServerFetchOptions) {
-    return serverRequest<T>('PUT', rutaEmailGateway(path), { ...opts, body, baseUrl: env.emailGatewayBaseUrl });
-  },
-
-  async patch<T>(path: string, body?: unknown, opts?: ServerFetchOptions) {
-    return serverRequest<T>('PATCH', rutaEmailGateway(path), { ...opts, body, baseUrl: env.emailGatewayBaseUrl });
-  },
-
-  async delete<T>(path: string, opts?: ServerFetchOptions) {
-    return serverRequest<T>('DELETE', rutaEmailGateway(path), { ...opts, baseUrl: env.emailGatewayBaseUrl });
-  },
-} as const;
+export const emailGatewayFetch = clienteNotificacion(EMAIL_GATEWAY_PREFIX);

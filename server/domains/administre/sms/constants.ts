@@ -1,5 +1,5 @@
 /**
- * Plantillas de sms_gateway (el prefijo /api/sms_gateway/v1/sms lo pone smsGatewayFetch).
+ * Plantillas de sms_gateway por el proxy de notificacion (smsGatewayFetch pone /api/notificacion/v1/gateway/sms).
  * Proveedores, cuentas, tipos de mensaje, servicios y rutas se administran en notificacion (smsAdminFetch).
  */
 export const SMS_ADMIN = '/admin';

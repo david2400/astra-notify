@@ -39,6 +39,7 @@ import {
   type OpcionCuenta,
   type OpcionPlantillaSms,
   type OpcionProveedor,
+  type OpcionRutaSms,
   type OpcionTipoSms,
 } from '../models/sms.interface';
 
@@ -47,6 +48,7 @@ interface Props {
   plantillas: OpcionPlantillaSms[];
   proveedores: OpcionProveedor[];
   cuentas: OpcionCuenta[];
+  rutas?: OpcionRutaSms[];
   errorCatalogos?: string;
 }
 
@@ -56,10 +58,11 @@ const COLUMNAS_TELEFONO = ['telefono', 'teléfono', 'celular', 'movil', 'móvil'
 const LECTURA_VACIA: LecturaDestinatarios = { filas: [], columnasVariables: [], conEncabezado: false };
 
 /**
- * Envío de SMS por sms_gateway: individual (POST /v1/sms/send, síncrono, con Idempotency-Key) o masivo
- * (POST /v1/sms/batch, hasta 5000 destinos) con texto libre o plantilla y variables por destinatario.
+ * Envío de SMS por la cola de notificacion: individual (POST /v1/envios/sms con idempotency_key; se espera el
+ * resultado unos segundos) o masivo (POST /v1/envios/sms/lote) con texto libre o plantilla y variables por
+ * destinatario. El individual puede pedir una ruta (código o id) en lugar de proveedor/cuenta.
  */
-export function EnviarSmsScene({ tipos, plantillas, proveedores, cuentas, errorCatalogos }: Props) {
+export function EnviarSmsScene({ tipos, plantillas, proveedores, cuentas, rutas = [], errorCatalogos }: Props) {
   const [modo, setModo] = useState<ModoEnvio>('individual');
   const [contenido, setContenido] = useState<Contenido>(plantillas.length ? 'plantilla' : 'texto');
   const [tipo, setTipo] = useState('');
@@ -71,6 +74,7 @@ export function EnviarSmsScene({ tipos, plantillas, proveedores, cuentas, errorC
   const [proveedor, setProveedor] = useState('');
   const [cuenta, setCuenta] = useState('');
   const [sender, setSender] = useState('');
+  const [ruta, setRuta] = useState('');
   const [lectura, setLectura] = useState<LecturaDestinatarios>(LECTURA_VACIA);
   const [clave, setClave] = useState(nuevaClave);
   const [error, setError] = useState<string | null>(null);
@@ -87,6 +91,8 @@ export function EnviarSmsScene({ tipos, plantillas, proveedores, cuentas, errorC
   const segmentos = calcularSegmentos(vistaPrevia);
   const validas = lectura.filas.filter((f) => !f.error);
   const cuentasProveedor = cuentas.filter((c) => !proveedor || c.proveedor === proveedor);
+  // La ruta solo aplica al envío individual y no se combina con proveedor ni cuenta
+  const rutaElegida = modo === 'individual' ? rutas.find((r) => r.valor === ruta) : undefined;
 
   const cambiarPlantilla = (codigo: string) => {
     setPlantillaCodigo(codigo);
@@ -106,14 +112,14 @@ export function EnviarSmsScene({ tipos, plantillas, proveedores, cuentas, errorC
   /** Campos comunes a individual y masivo. */
   const base = (): Pick<IEnviarSms, 'tipo_mensaje' | 'message' | 'plantilla' | 'variables' | 'proveedor' | 'cuenta' | 'sender'> => ({
     tipo_mensaje: tipo || undefined,
-    proveedor: proveedor || undefined,
-    cuenta: cuenta || undefined,
+    proveedor: rutaElegida ? undefined : proveedor || undefined,
+    cuenta: rutaElegida ? undefined : cuenta || undefined,
     sender: sender.trim() || undefined,
     ...(contenido === 'plantilla' ? { plantilla: plantillaCodigo, variables: soloConValor(variables) } : { message: mensaje.trim() }),
   });
 
   const validarComun = (): string | null => {
-    if (!tipo && !(contenido === 'plantilla' && plantilla?.tipo_mensaje)) return 'Selecciona el tipo de mensaje.';
+    if (!tipo && !rutaElegida && !(contenido === 'plantilla' && plantilla?.tipo_mensaje)) return 'Selecciona el tipo de mensaje (o una ruta).';
     if (contenido === 'texto' && !mensaje.trim()) return 'Escribe el mensaje.';
     if (contenido === 'plantilla' && !plantilla) return 'Selecciona una plantilla.';
     return null;
@@ -126,7 +132,7 @@ export function EnviarSmsScene({ tipos, plantillas, proveedores, cuentas, errorC
       const faltan = variablesFaltantes(plantilla.variables, variables);
       if (faltan.length) return setError(`Faltan variables obligatorias: ${faltan.join(', ')}`);
     }
-    const payload: IEnviarSms = { ...base(), to: destino, country_code: indicativo.trim() || undefined };
+    const payload: IEnviarSms = { ...base(), to: destino, country_code: indicativo.trim() || undefined, ruta: rutaElegida?.valor };
     setEnviando(true);
     const r = await enviarSmsServerAction(payload, clave);
     setEnviando(false);
@@ -188,6 +194,22 @@ export function EnviarSmsScene({ tipos, plantillas, proveedores, cuentas, errorC
   if (resultado?.individual) return <ResultadoSms resultado={resultado.individual} destino={resultado.destino} onNuevo={reiniciar} />;
   if (resultado?.lote) return <ResultadoLoteSms resultado={resultado.lote} destinos={resultado.destinos} onNuevo={reiniciar} />;
 
+  const rutaSelect = (
+    <NativeSelect
+      id='sms-ruta'
+      label='Ruta'
+      placeholder={rutas.length ? 'Automática (según el tipo)' : 'Sin rutas disponibles'}
+      opciones={rutas.map((r) => ({ value: r.valor, label: r.etiqueta }))}
+      value={ruta}
+      disabled={modo !== 'individual'}
+      onChange={(e) => {
+        setRuta(e.target.value);
+        const r = rutas.find((x) => x.valor === e.target.value);
+        if (r && !tipo && tipos.some((t) => t.codigo === r.tipo_mensaje)) setTipo(r.tipo_mensaje);
+      }}
+    />
+  );
+
   return (
     <div className='flex flex-col gap-5'>
       {errorCatalogos ? (
@@ -199,7 +221,9 @@ export function EnviarSmsScene({ tipos, plantillas, proveedores, cuentas, errorC
       <div className='flex flex-wrap items-center justify-between gap-3'>
         <SelectorModo modo={modo} onChange={(m) => { setModo(m); setError(null); }} />
         <p className='text-sm text-muted-foreground'>
-          {modo === 'individual' ? 'Un número; el resultado es inmediato.' : `Lista pegada o CSV, hasta ${MAX_DESTINOS_SMS} números.`}
+          {modo === 'individual'
+            ? 'Un número; sale por la cola de notificacion y el resultado llega en segundos.'
+            : `Lista pegada o CSV, hasta ${MAX_DESTINOS_SMS} números (la cola los envía por bloques).`}
         </p>
       </div>
 
@@ -299,12 +323,14 @@ export function EnviarSmsScene({ tipos, plantillas, proveedores, cuentas, errorC
       <details className='rounded-2xl border border-border/60 bg-card p-5'>
         <summary className='cursor-pointer text-sm font-semibold text-foreground'>Opciones avanzadas</summary>
         <div className='mt-4 grid grid-cols-1 gap-4 md:grid-cols-3'>
+          <div className='md:col-span-3'>{rutaSelect}</div>
           <NativeSelect
             id='sms-proveedor'
             label='Proveedor preferido'
             placeholder='Según la ruta'
             opciones={proveedores.map((p) => ({ value: p.codigo, label: p.nombre }))}
-            value={proveedor}
+            value={rutaElegida ? '' : proveedor}
+            disabled={Boolean(rutaElegida)}
             onChange={(e) => { setProveedor(e.target.value); setCuenta(''); }}
           />
           <NativeSelect
@@ -312,7 +338,8 @@ export function EnviarSmsScene({ tipos, plantillas, proveedores, cuentas, errorC
             label='Cuenta'
             placeholder='Según la ruta'
             opciones={cuentasProveedor.map((c) => ({ value: c.codigo, label: `${c.codigo} (${c.proveedor})` }))}
-            value={cuenta}
+            value={rutaElegida ? '' : cuenta}
+            disabled={Boolean(rutaElegida)}
             onChange={(e) => setCuenta(e.target.value)}
           />
           <div className='space-y-1.5'>
@@ -320,7 +347,13 @@ export function EnviarSmsScene({ tipos, plantillas, proveedores, cuentas, errorC
             <Input id='sms-sender' maxLength={20} placeholder='El de la cuenta' value={sender} onChange={(e) => setSender(e.target.value)} />
           </div>
         </div>
-        <p className='mt-3 text-xs text-muted-foreground'>Si no eliges nada, sms_gateway usa la ruta configurada para el tipo de mensaje, con fallback entre proveedores.</p>
+        <p className='mt-3 text-xs text-muted-foreground'>
+          {rutaElegida
+            ? `Se ejecutan los pasos de la ruta ${rutaElegida.valor} en orden (reintentos por paso y fallback al siguiente); proveedor y cuenta no aplican.`
+            : modo === 'individual'
+              ? 'Si no eliges nada, sms_gateway usa la ruta configurada para el tipo de mensaje, con fallback entre proveedores.'
+              : 'El masivo usa la ruta del tipo de mensaje (la ruta por código solo aplica al envío individual).'}
+        </p>
       </details>
 
       <AvisoError mensaje={error} />

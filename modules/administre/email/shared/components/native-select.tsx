@@ -33,7 +33,7 @@ export const NativeSelect = forwardRef<HTMLSelectElement, NativeSelectProps>(
         ref={ref}
         id={id}
         aria-invalid={error ? true : undefined}
-        className='h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30 aria-invalid:border-destructive'
+        className='h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30 aria-invalid:border-destructive disabled:cursor-not-allowed disabled:opacity-60'
         {...rest}>
         {placeholder !== undefined ? <option value=''>{placeholder}</option> : null}
         {opciones.map((opcion) => (

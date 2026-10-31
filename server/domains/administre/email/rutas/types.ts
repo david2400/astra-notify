@@ -15,6 +15,8 @@ export interface IPaso {
 
 export interface IRuta extends IAuditoria {
   id: number;
+  /** Código de la ruta (único por canal); null = sin código. */
+  codigo?: string | null;
   /** null/ausente = ruta CENTRAL (/v1/email/send). */
   proveedor?: string | null;
   tipo_mensaje: string;
@@ -28,6 +30,8 @@ export interface IPasoPayload {
 }
 
 export interface ICrearRuta {
+  /** Opcional, único por canal (se guarda en mayúsculas). */
+  codigo?: string | null;
   /** null = CENTRAL. */
   proveedor: string | null;
   tipo_mensaje: string;

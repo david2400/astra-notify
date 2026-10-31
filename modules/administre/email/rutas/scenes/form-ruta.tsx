@@ -6,6 +6,8 @@ import { useMemo } from 'react';
 import { useForm, type Control, type UseFormRegister } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Buttons } from '@repo/ui/buttons/scenes';
+import { Input } from '@repo/ui/inputs/scenes/input';
+import { Label } from '@repo/ui/label/scenes/label';
 import type { ICuenta } from '@/server/domains/administre/email/cuentas/types';
 import { NativeSelect, type OpcionSelect } from '../../shared/components/native-select';
 import { PASO_DEFAULT } from '../models/ruta.interface';
@@ -37,7 +39,7 @@ export function FormRuta({ proveedores, tipos, cuentas, onSubmit }: FormRutaProp
     formState: { errors, isSubmitting },
   } = useForm<RutaFormValues>({
     resolver: zodResolver(rutaSchema),
-    defaultValues: { proveedor: '', tipo_mensaje: '', pasos: [{ ...PASO_DEFAULT }] },
+    defaultValues: { codigo: '', proveedor: '', tipo_mensaje: '', pasos: [{ ...PASO_DEFAULT }] },
   });
   const proveedor = watch('proveedor');
   const opciones = useMemo(() => opcionesCuenta(cuentas, proveedor), [cuentas, proveedor]);
@@ -45,6 +47,15 @@ export function FormRuta({ proveedores, tipos, cuentas, onSubmit }: FormRutaProp
   return (
     <form onSubmit={handleSubmit(onSubmit)} className='space-y-6'>
       <div className='grid grid-cols-12 gap-4'>
+        <div className='col-span-12 space-y-1.5'>
+          <Label htmlFor='codigo'>Código (opcional)</Label>
+          <Input id='codigo' maxLength={50} placeholder='OTP_PRIORITARIA' className='uppercase' {...register('codigo')} />
+          {errors.codigo?.message ? (
+            <p className='text-xs text-destructive'>{errors.codigo.message}</p>
+          ) : (
+            <p className='text-xs text-muted-foreground'>Permite pedir esta ruta en el envío con el campo <code>ruta</code> (también sirve el id).</p>
+          )}
+        </div>
         <NativeSelect
           id='proveedor'
           label='Ruta de'

@@ -36,3 +36,11 @@ export async function obtenerRutaEfectivaEmailAction(filtro: IFiltroRutaEfectiva
     return handleError(error);
   }
 }
+
+export async function cambiarCodigoRutaEmailAction(id: number, codigo: string | null): Promise<ActionResult<IRuta>> {
+  try {
+    return { success: true, data: await rutaEmailRepository.cambiarCodigo(id, codigo) };
+  } catch (error) {
+    return handleError(error);
+  }
+}

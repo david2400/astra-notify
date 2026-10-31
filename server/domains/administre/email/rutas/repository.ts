@@ -64,6 +64,11 @@ export const rutaEmailRepository = {
   async reemplazarPasos({ ruta_id, pasos }: IReemplazarPasos): Promise<IRuta> {
     return aRuta(await emailAdminFetch.put<IRutaApi>(`${BASE}/${ruta_id}/pasos`, { pasos }));
   },
+  /** PUT /rutas/{id}/codigo: null quita el código. */
+  async cambiarCodigo(id: number, codigo: string | null): Promise<IRuta> {
+    return aRuta(await emailAdminFetch.put<IRutaApi>(`${BASE}/${id}/codigo`, { codigo }));
+  },
+
   async cambiarEstado(id: number, payload: IEstadoPayload): Promise<IRuta> {
     return aRuta(await emailAdminFetch.patch<IRutaApi>(`${BASE}/${id}/estado`, payload));
   },
