@@ -28,6 +28,8 @@ export interface IPlantilla extends IAuditoria {
   /** HTML con variables: los valores se escapan al renderizar. El listado no lo incluye. */
   cuerpo_html?: string | null;
   cuerpo_texto?: string | null;
+  /** Diseño del editor visual (JSON). Solo en el detalle; null = plantilla editada como HTML. */
+  diseno_json?: string | null;
   version: number;
   /** El listado no incluye variables; el detalle (GET /{codigo}) sí. */
   variables?: IPlantillaVariable[];
@@ -54,6 +56,7 @@ export interface ICrearPlantilla {
   asunto: string;
   cuerpo_html?: string | null;
   cuerpo_texto?: string | null;
+  diseno_json?: string | null;
   variables: IPlantillaVariablePayload[];
 }
 

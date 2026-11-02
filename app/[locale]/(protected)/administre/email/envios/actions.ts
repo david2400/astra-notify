@@ -5,8 +5,10 @@ import {
   enviarPruebaEmailAction,
   obtenerDetalleEnvioEmailAction,
   obtenerLoteEmailAction,
+  obtenerEstadisticasEmailAction,
   reintentarEnvioEmailAction,
   type IEnvioPrueba,
+  type IFiltroEstadisticas,
 } from '@/server/domains/administre/email/envios';
 
 export async function obtenerDetalleEnvioEmailServerAction(envioId: string) {
@@ -27,4 +29,8 @@ export async function obtenerLoteEmailServerAction(loteId: string) {
 
 export async function enviarPruebaEmailServerAction(payload: IEnvioPrueba) {
   return enviarPruebaEmailAction(payload);
+}
+
+export async function obtenerEstadisticasEmailServerAction(filtro: IFiltroEstadisticas) {
+  return obtenerEstadisticasEmailAction(filtro);
 }

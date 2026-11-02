@@ -38,6 +38,10 @@ export interface IDireccion {
 export interface IEnvioDetalle {
   envio: IEnvio;
   para?: IDireccion[];
+  /** Contenido tal como se envió (variables ya aplicadas); null si se depuró. */
+  cuerpo_html?: string | null;
+  cuerpo_texto?: string | null;
+  plantilla_version?: number | null;
   cc?: IDireccion[];
   cco?: IDireccion[];
   adjuntos?: { nombre: string; content_type?: string; tamano_bytes?: number; url?: string; content_id?: string; compartido: boolean }[];
@@ -62,10 +66,76 @@ export interface IFiltroEnvios {
   tipo_mensaje?: string;
   proveedor?: string;
   lote_id?: string;
+  /** Código de plantilla. */
+  plantilla?: string;
   desde?: string;
   hasta?: string;
   page?: number;
   size?: number;
+}
+
+/** Filtro de /v1/email/envios/estadisticas (sin periodo: últimos 30 días; máximo 366). */
+export interface IFiltroEstadisticas {
+  plantilla?: string;
+  tipo_mensaje?: string;
+  desde?: string;
+  hasta?: string;
+  /** Minutos a sumar a UTC para agrupar por día local (Colombia: -300). */
+  tz_offset?: number;
+}
+
+export interface ITotalesEnvio {
+  total: number;
+  enviados: number;
+  fallidos: number;
+  en_cola: number;
+  cancelados: number;
+  entregados: number;
+  abiertos: number;
+  clics: number;
+  rebotes_suaves: number;
+  rebotes_duros: number;
+  spam: number;
+  desuscritos: number;
+  bloqueados: number;
+  aperturas_totales: number;
+  clics_totales: number;
+}
+
+/** Porcentajes (null = sin base para calcular). */
+export interface ITasasEnvio {
+  entrega: number | null;
+  apertura: number | null;
+  clic: number | null;
+  clic_sobre_apertura: number | null;
+  rebote: number | null;
+  spam: number | null;
+  desuscripcion: number | null;
+  fallo: number | null;
+}
+
+export interface IPuntoSerie {
+  /** yyyy-MM-dd (día local). */
+  fecha: string;
+  total: number;
+  enviados: number;
+  entregados: number;
+  abiertos: number;
+  clics: number;
+  rebotes: number;
+  fallidos: number;
+}
+
+/** Métricas de un periodo; en el listado por plantilla `serie` va vacía y viene `ultimo_envio`. */
+export interface IEstadisticasEnvio {
+  plantilla?: string | null;
+  tipo_mensaje?: string | null;
+  desde: string;
+  hasta: string;
+  totales: ITotalesEnvio;
+  tasas: ITasasEnvio;
+  serie: IPuntoSerie[];
+  ultimo_envio?: string | null;
 }
 
 export interface IPagina<T> {

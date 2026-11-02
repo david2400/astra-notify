@@ -2,12 +2,23 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
+import {
+  HiOutlineCheckCircle,
+  HiOutlineCursorArrowRays,
+  HiOutlineEnvelopeOpen,
+  HiOutlineExclamationTriangle,
+  HiOutlineInboxArrowDown,
+  HiOutlineNoSymbol,
+  HiOutlinePaperAirplane,
+  HiOutlineXCircle,
+} from 'react-icons/hi2';
 import { Badge } from '@repo/ui/badges/scenes/badge';
 import { obtenerDetalleEnvioEmailServerAction } from '@/app/[locale]/(protected)/administre/email/envios/actions';
 import { EstadoEntregaBadge, EstadoEnvioBadge } from '../../shared/components/estado-envio-badge';
 import { fechaCorta } from '../../shared/utils/formato';
 import type { IEnvioDetalle } from '../models/envio.interface';
+import { VistaHtml } from '../../plantillas/components/vista-html';
 
 const direcciones = (lista?: { email: string; nombre?: string }[]) =>
   lista?.length ? lista.map((d) => (d.nombre ? `${d.nombre} <${d.email}>` : d.email)).join(', ') : null;
@@ -22,10 +33,77 @@ function Fila({ etiqueta, valor }: { etiqueta: string; valor?: React.ReactNode }
   );
 }
 
+type Tono = 'ok' | 'info' | 'alerta' | 'error';
+const ICONO_ESTADO: Record<string, { icono: ReactNode; tono: Tono; titulo: string }> = {
+  SOLICITADO: { icono: <HiOutlinePaperAirplane className='h-4 w-4' />, tono: 'info', titulo: 'Aceptado por el proveedor' },
+  DIFERIDO: { icono: <HiOutlineExclamationTriangle className='h-4 w-4' />, tono: 'alerta', titulo: 'Entrega diferida' },
+  REBOTE_SUAVE: { icono: <HiOutlineExclamationTriangle className='h-4 w-4' />, tono: 'alerta', titulo: 'Rebote suave' },
+  ENTREGADO: { icono: <HiOutlineInboxArrowDown className='h-4 w-4' />, tono: 'ok', titulo: 'Entregado' },
+  ABIERTO: { icono: <HiOutlineEnvelopeOpen className='h-4 w-4' />, tono: 'ok', titulo: 'Abierto' },
+  CLIC: { icono: <HiOutlineCursorArrowRays className='h-4 w-4' />, tono: 'ok', titulo: 'Clic en un enlace' },
+  DESUSCRITO: { icono: <HiOutlineNoSymbol className='h-4 w-4' />, tono: 'alerta', titulo: 'Se dio de baja' },
+  SPAM: { icono: <HiOutlineNoSymbol className='h-4 w-4' />, tono: 'error', titulo: 'Marcado como spam' },
+  REBOTE_DURO: { icono: <HiOutlineXCircle className='h-4 w-4' />, tono: 'error', titulo: 'Rebote duro' },
+  INVALIDO: { icono: <HiOutlineXCircle className='h-4 w-4' />, tono: 'error', titulo: 'Dirección inválida' },
+  BLOQUEADO: { icono: <HiOutlineXCircle className='h-4 w-4' />, tono: 'error', titulo: 'Bloqueado' },
+  ERROR: { icono: <HiOutlineXCircle className='h-4 w-4' />, tono: 'error', titulo: 'Error del proveedor' },
+};
+const CLASE_TONO: Record<Tono, string> = {
+  ok: 'bg-emerald-600 text-white',
+  info: 'bg-primary text-primary-foreground',
+  alerta: 'bg-amber-500 text-white',
+  error: 'bg-destructive text-white',
+};
+
+interface Hito {
+  titulo: string;
+  detalle?: string | null;
+  fecha?: string | null;
+  icono: ReactNode;
+  tono: Tono;
+}
+
+/** Línea de tiempo del correo (como los logs de Brevo): creado → enviado → eventos del webhook. */
+function LineaTiempo({ d }: { d: IEnvioDetalle }) {
+  const e = d.envio;
+  const hitos: Hito[] = [{ titulo: 'Creado en la cola', detalle: e.plantilla ? `Plantilla ${e.plantilla}${d.plantilla_version ? ` v${d.plantilla_version}` : ''}` : null, fecha: e.created_at, icono: <HiOutlinePaperAirplane className='h-4 w-4' />, tono: 'info' }];
+  if (e.estado === 'ENVIADO') {
+    hitos.push({ titulo: 'Enviado', detalle: e.proveedor ? `${e.proveedor} / ${e.cuenta}` : null, fecha: e.fecha_finalizacion, icono: <HiOutlineCheckCircle className='h-4 w-4' />, tono: 'ok' });
+  } else if (e.estado === 'FALLIDO') {
+    hitos.push({ titulo: 'No se pudo enviar', detalle: e.codigo_error ? `${e.codigo_error}: ${e.detalle_error ?? ''}` : null, fecha: e.fecha_finalizacion, icono: <HiOutlineXCircle className='h-4 w-4' />, tono: 'error' });
+  } else if (e.estado === 'CANCELADO') {
+    hitos.push({ titulo: 'Cancelado', fecha: e.fecha_finalizacion, icono: <HiOutlineNoSymbol className='h-4 w-4' />, tono: 'alerta' });
+  } else {
+    hitos.push({ titulo: e.estado === 'REINTENTO' ? 'Esperando reintento' : 'En cola', detalle: e.proximo_intento ? `Próximo intento ${fechaCorta(e.proximo_intento)}` : null, icono: <HiOutlinePaperAirplane className='h-4 w-4' />, tono: 'alerta' });
+  }
+  for (const ev of d.eventos ?? []) {
+    const info = (ev.estado_entrega && ICONO_ESTADO[ev.estado_entrega]) || { icono: <HiOutlineCheckCircle className='h-4 w-4' />, tono: 'info' as Tono, titulo: ev.evento };
+    hitos.push({ titulo: info.titulo, detalle: [ev.email, ev.motivo].filter(Boolean).join(' · ') || null, fecha: ev.fecha_evento, icono: info.icono, tono: info.tono });
+  }
+  return (
+    <ol className='relative space-y-4 border-l border-border pl-6'>
+      {hitos.map((h, i) => (
+        <li key={i} className='relative'>
+          <span className={`absolute -left-[35px] top-0 flex h-7 w-7 items-center justify-center rounded-full ring-4 ring-background ${CLASE_TONO[h.tono]}`}>{h.icono}</span>
+          <div className='flex flex-wrap items-baseline justify-between gap-2'>
+            <p className='text-sm font-semibold text-foreground'>{h.titulo}</p>
+            <time className='text-xs text-muted-foreground'>{h.fecha ? fechaCorta(h.fecha) : ''}</time>
+          </div>
+          {h.detalle ? <p className='break-words text-xs text-muted-foreground'>{h.detalle}</p> : null}
+        </li>
+      ))}
+      {!d.eventos?.length && e.estado === 'ENVIADO' ? (
+        <li className='text-xs text-muted-foreground'>Sin eventos de entrega todavía (llegan por el webhook del proveedor, p. ej. Brevo).</li>
+      ) : null}
+    </ol>
+  );
+}
+
 /** Detalle completo: destinatarios, resultado, adjuntos, intentos por paso y eventos de entrega. */
 export function DetalleEnvio({ envioId }: { envioId: string }) {
   const [detalle, setDetalle] = useState<IEnvioDetalle | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [pestana, setPestana] = useState<'resumen' | 'contenido' | 'tecnico'>('resumen');
 
   useEffect(() => {
     let vigente = true;
@@ -42,6 +120,12 @@ export function DetalleEnvio({ envioId }: { envioId: string }) {
   if (error) return <p className='text-sm text-destructive'>{error}</p>;
   if (!detalle) return <p className='text-sm text-muted-foreground'>Cargando detalle...</p>;
   const e = detalle.envio;
+
+  const pestanas = [
+    { id: 'resumen' as const, etiqueta: 'Línea de tiempo' },
+    { id: 'contenido' as const, etiqueta: 'Contenido enviado' },
+    { id: 'tecnico' as const, etiqueta: `Intentos (${detalle.intentos?.length ?? 0})` },
+  ];
 
   return (
     <div className='space-y-6'>
@@ -67,6 +151,40 @@ export function DetalleEnvio({ envioId }: { envioId: string }) {
         <Fila etiqueta='Próximo intento' valor={e.proximo_intento ? fechaCorta(e.proximo_intento) : null} />
         <Fila etiqueta='Finalizado' valor={e.fecha_finalizacion ? fechaCorta(e.fecha_finalizacion) : null} />
       </dl>
+
+      <div role='tablist' aria-label='Detalle del envío' className='flex gap-1 border-b border-border'>
+        {pestanas.map((p) => (
+          <button
+            key={p.id}
+            type='button'
+            role='tab'
+            aria-selected={pestana === p.id}
+            onClick={() => setPestana(p.id)}
+            className={`-mb-px border-b-2 px-3 py-2 text-sm font-medium transition ${pestana === p.id ? 'border-primary text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground'}`}>
+            {p.etiqueta}
+          </button>
+        ))}
+      </div>
+
+      {pestana === 'resumen' ? <LineaTiempo d={detalle} /> : null}
+
+      {pestana === 'contenido' ? (
+        <section className='space-y-3'>
+          <p className='rounded-lg border border-border bg-muted/30 p-3 text-sm'>
+            <span className='text-xs uppercase tracking-wider text-muted-foreground'>Asunto: </span>
+            <strong>{e.asunto ?? '—'}</strong>
+          </p>
+          {detalle.cuerpo_html ? (
+            <VistaHtml html={detalle.cuerpo_html} titulo='Correo enviado' alto={480} />
+          ) : detalle.cuerpo_texto ? (
+            <p className='whitespace-pre-wrap rounded-xl border border-border p-4 text-sm'>{detalle.cuerpo_texto}</p>
+          ) : (
+            <p className='text-sm text-muted-foreground'>El contenido ya no está disponible (se depura después de un tiempo).</p>
+          )}
+        </section>
+      ) : null}
+
+      <div hidden={pestana !== 'tecnico'} className='space-y-6'>
 
       {detalle.adjuntos?.length ? (
         <section className='space-y-2'>
@@ -128,6 +246,7 @@ export function DetalleEnvio({ envioId }: { envioId: string }) {
           <p className='text-sm text-muted-foreground'>Sin eventos (llegan por el webhook del proveedor, p. ej. Brevo).</p>
         )}
       </section>
+      </div>
     </div>
   );
 }

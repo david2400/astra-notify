@@ -20,7 +20,7 @@ const aLocal = (iso?: string) => {
 const aIso = (local: string) => (local ? new Date(local).toISOString() : '');
 
 /** Filtros del historial: se reflejan en la URL (?estado=...&page=0) y los aplica la página en el servidor. */
-export function FiltrosEnvios({ filtro, tipos }: { filtro: IFiltroEnvios; tipos: OpcionSelect[] }) {
+export function FiltrosEnvios({ filtro, tipos, plantillas = [], plantillaFija }: { filtro: IFiltroEnvios; tipos: OpcionSelect[]; plantillas?: OpcionSelect[]; plantillaFija?: string }) {
   const router = useRouter();
   const [v, setV] = useState({
     destino: filtro.destino ?? '',
@@ -29,6 +29,7 @@ export function FiltrosEnvios({ filtro, tipos }: { filtro: IFiltroEnvios; tipos:
     tipo_mensaje: filtro.tipo_mensaje ?? '',
     proveedor: filtro.proveedor ?? '',
     lote_id: filtro.lote_id ?? '',
+    plantilla: plantillaFija ? '' : (filtro.plantilla ?? ''),
     desde: aLocal(filtro.desde),
     hasta: aLocal(filtro.hasta),
   });
@@ -53,15 +54,18 @@ export function FiltrosEnvios({ filtro, tipos }: { filtro: IFiltroEnvios; tipos:
       <NativeSelect id='f-entrega' label='Entrega' placeholder='Todas' opciones={ESTADOS_ENTREGA} value={v.estado_entrega} onChange={set('estado_entrega')} className='col-span-6 md:col-span-2' />
       <NativeSelect id='f-tipo' label='Tipo' placeholder='Todos' opciones={tipos} value={v.tipo_mensaje} onChange={set('tipo_mensaje')} className='col-span-6 md:col-span-2' />
       <NativeSelect id='f-proveedor' label='Proveedor' placeholder='Todos' opciones={PROVEEDORES_ENVIO} value={v.proveedor} onChange={set('proveedor')} className='col-span-6 md:col-span-2' />
-      <div className='col-span-12 space-y-1.5 md:col-span-4'>
+      {!plantillaFija ? (
+        <NativeSelect id='f-plantilla' label='Plantilla' placeholder='Todas' opciones={plantillas} value={v.plantilla} onChange={set('plantilla')} className='col-span-12 md:col-span-3' />
+      ) : null}
+      <div className={`col-span-12 space-y-1.5 ${plantillaFija ? 'md:col-span-4' : 'md:col-span-3'}`}>
         <Label htmlFor='f-lote'>Lote</Label>
         <Input id='f-lote' placeholder='lote_id' value={v.lote_id} onChange={set('lote_id')} />
       </div>
-      <div className='col-span-6 space-y-1.5 md:col-span-3'>
+      <div className={`col-span-6 space-y-1.5 ${plantillaFija ? 'md:col-span-3' : 'md:col-span-2'}`}>
         <Label htmlFor='f-desde'>Desde</Label>
         <Input id='f-desde' type='datetime-local' value={v.desde} onChange={set('desde')} />
       </div>
-      <div className='col-span-6 space-y-1.5 md:col-span-3'>
+      <div className={`col-span-6 space-y-1.5 ${plantillaFija ? 'md:col-span-3' : 'md:col-span-2'}`}>
         <Label htmlFor='f-hasta'>Hasta</Label>
         <Input id='f-hasta' type='datetime-local' value={v.hasta} onChange={set('hasta')} />
       </div>

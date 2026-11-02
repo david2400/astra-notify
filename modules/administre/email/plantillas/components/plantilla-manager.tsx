@@ -5,7 +5,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useRouter } from '@/shared/i18n/routing';
 import type { ColumnDef } from '@tanstack/react-table';
-import { HiOutlineEnvelope } from 'react-icons/hi2';
+import { HiOutlineChartBar, HiOutlineDocumentDuplicate, HiOutlineEnvelope, HiOutlinePencilSquare } from 'react-icons/hi2';
 import { DataTable } from '@repo/ui/table/scenes';
 import { Modal } from '@repo/ui/modals/scenes';
 import { Buttons } from '@repo/ui/buttons/scenes';
@@ -17,9 +17,15 @@ import { ManagerHeader } from '../../shared/components/manager-header';
 import { TablaAdmin } from '../../shared/components/tabla-admin';
 import { confirmar, ejecutarAccion } from '../../shared/utils/feedback';
 import type { IPlantilla } from '../models/plantilla.interface';
+import type { IEstadisticasEnvio } from '@/server/domains/administre/email/envios/types';
 import { PlantillaEmailPreview } from './plantilla-preview';
 
-export function PlantillaEmailManager({ initialData }: { initialData: IPlantilla[] }) {
+const pct = (v: number | null | undefined) => (v === null || v === undefined ? '—' : `${v.toLocaleString('es-CO', { maximumFractionDigits: 1 })}%`);
+const accion =
+  'inline-flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-sm font-medium transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
+
+export function PlantillaEmailManager({ initialData, estadisticas = [] }: { initialData: IPlantilla[]; estadisticas?: IEstadisticasEnvio[] }) {
+  const porCodigo = useMemo(() => new Map(estadisticas.map((e) => [e.plantilla ?? '', e])), [estadisticas]);
   const router = useRouter();
   const [plantillas, setPlantillas] = useState(initialData);
   const [previsualizando, setPrevisualizando] = useState<IPlantilla | null>(null);
@@ -62,6 +68,24 @@ export function PlantillaEmailManager({ initialData }: { initialData: IPlantilla
         cell: ({ row }) =>
           row.original.tipo_mensaje ? <Badge variant='outline'>{row.original.tipo_mensaje}</Badge> : <span className='text-xs text-muted-foreground'>Del request</span>,
       },
+      {
+        id: 'envios',
+        header: 'Envíos (30 días)',
+        cell: ({ row }) => {
+          const e = porCodigo.get(row.original.codigo);
+          if (!e) return <span className='text-xs text-muted-foreground'>Sin envíos</span>;
+          return (
+            <div className='space-y-0.5 text-xs'>
+              <p>
+                <strong className='text-sm tabular-nums text-foreground'>{e.totales.enviados.toLocaleString('es-CO')}</strong> <span className='text-muted-foreground'>enviados</span>
+              </p>
+              <p className='text-muted-foreground'>
+                Apertura <strong className='text-foreground'>{pct(e.tasas.apertura)}</strong> · Clic <strong className='text-foreground'>{pct(e.tasas.clic)}</strong>
+              </p>
+            </div>
+          );
+        },
+      },
       { accessorKey: 'version', header: 'Versión' },
       {
         accessorKey: 'eliminado',
@@ -74,10 +98,14 @@ export function PlantillaEmailManager({ initialData }: { initialData: IPlantilla
         enableSorting: false,
         cell: ({ row }) => (
           <div className='flex flex-wrap gap-2'>
-            <Link
-              href={`/administre/email/plantillas/${encodeURIComponent(row.original.codigo)}/editar`}
-              className='inline-flex items-center rounded-md border border-border px-3 py-2 text-sm font-medium transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'>
-              Editar
+            <Link href={`/administre/email/plantillas/${encodeURIComponent(row.original.codigo)}/editar`} className={accion}>
+              <HiOutlinePencilSquare className='h-4 w-4' /> Editar
+            </Link>
+            <Link href={`/administre/email/plantillas/${encodeURIComponent(row.original.codigo)}/estadisticas`} className={accion}>
+              <HiOutlineChartBar className='h-4 w-4' /> Seguimiento
+            </Link>
+            <Link href={`/administre/email/plantillas/nueva?desde=${encodeURIComponent(row.original.codigo)}`} className={accion} title='Duplicar plantilla'>
+              <HiOutlineDocumentDuplicate className='h-4 w-4' /> Duplicar
             </Link>
             <Buttons size='sm' variant='outline' onClick={() => setPrevisualizando(row.original)}>
               Vista previa
@@ -95,7 +123,7 @@ export function PlantillaEmailManager({ initialData }: { initialData: IPlantilla
       },
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [procesando],
+    [procesando, porCodigo],
   );
 
   return (
@@ -103,7 +131,7 @@ export function PlantillaEmailManager({ initialData }: { initialData: IPlantilla
       <ManagerHeader
         icon={<HiOutlineEnvelope className='h-6 w-6' />}
         title='Plantillas'
-        description='Asunto, HTML y texto con variables {{nombre}}. El gateway valida tipos, obligatorias, longitud y patrón, y escapa los valores en el HTML.'
+        description='Diseña correos con el editor de arrastrar y soltar o en HTML, con variables {{nombre}}. Revisa su seguimiento: entregas, aperturas y clics.'
         actionLabel='Nueva plantilla'
         onAction={() => router.push('/administre/email/plantillas/nueva')}
       />
@@ -111,7 +139,7 @@ export function PlantillaEmailManager({ initialData }: { initialData: IPlantilla
       {plantillas.length === 0 ? (
         <EmptyState title='No hay plantillas' description='Crea una para enviar con "plantilla" y "variables" en el request.' />
       ) : (
-        <TablaAdmin minWidth={1050}>
+        <TablaAdmin minWidth={1250}>
           <DataTable data={plantillas} columns={columns} className='py-2' />
         </TablaAdmin>
       )}

@@ -15,7 +15,7 @@ import { EstadoEntregaBadge, EstadoEnvioBadge } from '../../shared/components/es
 import { ManagerHeader } from '../../shared/components/manager-header';
 import { confirmar, ejecutarAccion } from '../../shared/utils/feedback';
 import { fechaCorta } from '../../shared/utils/formato';
-import type { IEnvio, IFiltroEnvios, IPagina } from '../models/envio.interface';
+import { GRUPOS_ENTREGA, type IEnvio, type IFiltroEnvios, type IPagina } from '../models/envio.interface';
 import { FormEnvioPrueba } from '../scenes/form-envio-prueba';
 import { DetalleEnvio } from './detalle-envio';
 import { FiltrosEnvios } from './filtros-envios';
@@ -27,10 +27,46 @@ interface Props {
   plantillas: IPlantilla[];
   /** false oculta el botón "Enviar prueba" (historial de Notificaciones). */
   mostrarPrueba?: boolean;
+  /** Historial de una sola plantilla (página de seguimiento): oculta el filtro de plantilla y el encabezado. */
+  plantillaFija?: string;
+}
+
+/** Pestañas rápidas por resultado de entrega (como los logs de Brevo). */
+function PestanasEntrega({ filtro }: { filtro: IFiltroEnvios }) {
+  const router = useRouter();
+  const activo =
+    GRUPOS_ENTREGA.find((g) => g.estado_entrega === (filtro.estado_entrega ?? '') && g.estado === (filtro.estado ?? ''))?.id ??
+    (filtro.estado || filtro.estado_entrega ? null : 'todos');
+  const ir = (g: (typeof GRUPOS_ENTREGA)[number]) => {
+    const q = new URLSearchParams();
+    for (const [k, v] of Object.entries(filtro)) {
+      if (v !== undefined && v !== '' && !['page', 'estado', 'estado_entrega'].includes(k)) q.set(k, String(v));
+    }
+    if (g.estado_entrega) q.set('estado_entrega', g.estado_entrega);
+    if (g.estado) q.set('estado', g.estado);
+    router.push(`?${q.toString()}`, { scroll: false });
+  };
+  return (
+    <div role='tablist' aria-label='Resultado de entrega' className='flex flex-wrap gap-1 border-b border-border'>
+      {GRUPOS_ENTREGA.map((g) => (
+        <button
+          key={g.id}
+          type='button'
+          role='tab'
+          aria-selected={activo === g.id}
+          onClick={() => ir(g)}
+          className={`-mb-px border-b-2 px-3 py-2 text-sm font-medium transition ${
+            activo === g.id ? 'border-primary text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground'
+          }`}>
+          {g.etiqueta}
+        </button>
+      ))}
+    </div>
+  );
 }
 
 /** Historial de envíos de email (paginado en el gateway) con detalle, cancelar, reintentar y envío de prueba. */
-export function EnvioEmailManager({ pagina, filtro, tipos, plantillas, mostrarPrueba = true }: Props) {
+export function EnvioEmailManager({ pagina, filtro, tipos, plantillas, mostrarPrueba = true, plantillaFija }: Props) {
   const router = useRouter();
   const [detalle, setDetalle] = useState<string | null>(null);
   const [probando, setProbando] = useState(false);
@@ -61,7 +97,7 @@ export function EnvioEmailManager({ pagina, filtro, tipos, plantillas, mostrarPr
 
   return (
     <section className='flex flex-col gap-6'>
-      <div className='flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between'>
+      <div className={`flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between ${plantillaFija ? 'hidden' : ''}`}>
         <ManagerHeader
           icon={<HiOutlineInboxStack className='h-6 w-6' />}
           title='Envíos'
@@ -75,7 +111,13 @@ export function EnvioEmailManager({ pagina, filtro, tipos, plantillas, mostrarPr
         ) : null}
       </div>
 
-      <FiltrosEnvios filtro={filtro} tipos={opcionesTipo} />
+      <FiltrosEnvios
+        filtro={filtro}
+        tipos={opcionesTipo}
+        plantillaFija={plantillaFija}
+        plantillas={plantillas.map((p) => ({ value: p.codigo, label: `${p.codigo} — ${p.nombre}` }))}
+      />
+      <PestanasEntrega filtro={plantillaFija ? { ...filtro, plantilla: undefined } : filtro} />
 
       {pagina.content.length === 0 ? (
         <EmptyState title='No hay envíos' description='Ajusta los filtros o haz un envío de prueba.' />

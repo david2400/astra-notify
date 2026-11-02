@@ -4,6 +4,7 @@ import { Link } from '@/shared/i18n/routing';
 import { ServerApiError } from '@/server/lib/types';
 import { getPlantillaEmail } from '@/server/domains/administre/email/plantillas';
 import { getTiposMensajeEmail } from '@/server/domains/administre/email/tipos-mensaje';
+import { getMarcaEmailSegura } from '@/server/domains/administre/email/disenos';
 import { PlantillaEmailEditorPage } from '@/modules/administre/email/plantillas/components/form';
 import { ErrorCarga } from '@/modules/administre/email/shared';
 
@@ -14,8 +15,8 @@ export default async function EditarPlantillaEmailPage({ params }: { params: Pro
   const valor = decodeURIComponent(codigo);
   if (!/^[A-Za-z0-9][A-Za-z0-9_-]{0,49}$/.test(valor)) notFound();
   try {
-    const [plantilla, tipos] = await Promise.all([getPlantillaEmail(valor), getTiposMensajeEmail()]);
-    return <PlantillaEmailEditorPage plantilla={plantilla} tipos={tipos.map((t) => ({ value: t.codigo, label: t.codigo }))} />;
+    const [plantilla, tipos, marca] = await Promise.all([getPlantillaEmail(valor), getTiposMensajeEmail(), getMarcaEmailSegura()]);
+    return <PlantillaEmailEditorPage plantilla={plantilla} marca={marca} tipos={tipos.map((t) => ({ value: t.codigo, label: t.codigo }))} />;
   } catch (error) {
     unstable_rethrow(error);
     if (error instanceof ServerApiError && error.status === 404) notFound();

@@ -9,7 +9,8 @@ export const EMAIL_ADMIN_SECCIONES = [
   { label: 'Tipos de mensaje', href: '/administre/email/tipos-mensaje', descripcion: 'Catálogo y prioridad en la cola (OTP, transaccional, masivo...).' },
   { label: 'Servicios', href: '/administre/email/servicios', descripcion: 'Qué tipos de mensaje atiende cada proveedor.' },
   { label: 'Rutas', href: '/administre/email/rutas', descripcion: 'Orden de cuentas, reintentos y fallback por tipo de mensaje.' },
-  { label: 'Plantillas', href: '/administre/email/plantillas', descripcion: 'Asunto, HTML y texto con variables {{nombre}} y vista previa.' },
+  { label: 'Plantillas', href: '/administre/email/plantillas', descripcion: 'Editor de arrastrar y soltar, variables {{nombre}}, vista previa y seguimiento.' },
+  { label: 'Marca y componentes', href: '/administre/email/marca', descripcion: 'Logo, colores, fuente y pie legal de los correos; componentes reutilizables.' },
 ] as const;
 
 /** Etiqueta de la ruta central (POST /v1/email/send). */

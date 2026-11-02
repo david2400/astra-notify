@@ -35,6 +35,8 @@ export const plantillaSchema = z
       .refine((v) => !/[\r\n]/.test(v), 'El asunto no puede tener saltos de línea'),
     cuerpo_html: z.string().max(2_000_000, 'Máximo 2 MB'),
     cuerpo_texto: z.string().max(2_000_000, 'Máximo 2 MB'),
+    /** Diseño del editor visual (JSON); vacío = plantilla editada como HTML. */
+    diseno_json: z.string().max(4_000_000, 'Diseño demasiado grande'),
     variables: z.array(variableSchema),
   })
   .superRefine((v, ctx) => {

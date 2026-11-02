@@ -62,6 +62,7 @@ export const NAV_ITEMS: NavItem[] = [
       { label: "Servicios por proveedor", href: "/administre/email/servicios" },
       { label: "Rutas", href: "/administre/email/rutas" },
       { label: "Plantillas", href: "/administre/email/plantillas" },
+      { label: "Marca y componentes", href: "/administre/email/marca" },
     ],
   },
 ];
