@@ -43,8 +43,11 @@ export function FormPlantilla({ initialValues, tipos, bloquearCodigo, onSubmit }
   const [nuevoNombre, setNuevoNombre] = useState('');
   const contenidoField = register('contenido');
   const faltantes = usadas.filter((nombre) => !variables.some((v) => v.nombre.trim() === nombre));
-  // Declaradas que el contenido no usa: el gateway las rechaza al guardar, se avisa antes.
-  const sinUsar = [...new Set(variables.map((v) => v.nombre.trim()).filter((n) => n && !usadas.includes(n)))];
+  // Obligatorias que el contenido no usa: el gateway las rechaza al guardar, se avisa antes.
+  // Las no obligatorias se pueden guardar sin aparecer en el contenido.
+  const noUsadas = variables.filter((v) => v.nombre.trim() && !usadas.includes(v.nombre.trim()));
+  const sinUsar = [...new Set(noUsadas.filter((v) => v.obligatoria).map((v) => v.nombre.trim()))];
+  const opcionalesSinUsar = [...new Set(noUsadas.filter((v) => !v.obligatoria).map((v) => v.nombre.trim()))];
   const insertar = (nombre: string) => {
     if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(nombre)) return;
     const texto = getValues('contenido');
@@ -162,7 +165,7 @@ export function FormPlantilla({ initialValues, tipos, bloquearCodigo, onSubmit }
             {faltantes.length > 0 && <p className='rounded-lg border border-border bg-muted/40 p-3 text-sm'>Variables pendientes de declarar: {faltantes.join(', ')}. Usa «Detectar del contenido» para configurarlas.</p>}
             {sinUsar.length > 0 && (
               <p role='status' className='rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-sm'>
-                Variables declaradas que no se usan en el contenido: <strong>{sinUsar.join(', ')}</strong>. Insértalas en el mensaje o quítalas; si no, el gateway no deja guardar la plantilla.
+                Variables obligatorias que no se usan en el contenido: <strong>{sinUsar.join(', ')}</strong>. Insértalas en el mensaje, quítalas o desmarca «Obligatoria»; si no, el gateway no deja guardar la plantilla.
               </p>
             )}
           </section>
@@ -234,7 +237,10 @@ export function FormPlantilla({ initialValues, tipos, bloquearCodigo, onSubmit }
                 <Input id={`variables.${index}.nombre`} {...register(`variables.${index}.nombre`)} />
                 {e?.nombre?.message ? <p className='text-xs text-destructive'>{e.nombre.message}</p> : null}
                 {!e?.nombre?.message && sinUsar.includes(variables[index]?.nombre.trim() ?? '') ? (
-                  <p className='text-xs text-amber-700 dark:text-amber-300'>No se usa en el contenido</p>
+                  <p className='text-xs text-amber-700 dark:text-amber-300'>Obligatoria y no se usa en el contenido</p>
+                ) : null}
+                {!e?.nombre?.message && opcionalesSinUsar.includes(variables[index]?.nombre.trim() ?? '') ? (
+                  <p className='text-xs text-muted-foreground'>Opcional: se guarda aunque no esté en el contenido</p>
                 ) : null}
               </div>
               <NativeSelect

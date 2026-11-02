@@ -49,8 +49,11 @@ export function FormPlantilla({ initialValues, tipos, bloquearCodigo, toPayload,
   const usadas = variablesDePlantilla(asunto, html, texto);
   const declaradas = variables.map((v) => v.nombre.trim()).filter(Boolean);
   const faltantes = usadas.filter((u) => !declaradas.includes(u));
-  // Declaradas que no se usan: el gateway guarda igual, pero se avisa (como en SMS).
-  const sinUsar = [...new Set(declaradas.filter((d) => !usadas.includes(d)))];
+  // Obligatorias que no se usan: el gateway guarda igual, pero se avisa (en SMS no deja guardar).
+  // Las no obligatorias pueden no aparecer en asunto, HTML ni texto.
+  const noUsadas = variables.filter((v) => v.nombre.trim() && !usadas.includes(v.nombre.trim()));
+  const sinUsar = [...new Set(noUsadas.filter((v) => v.obligatoria).map((v) => v.nombre.trim()))];
+  const opcionalesSinUsar = [...new Set(noUsadas.filter((v) => !v.obligatoria).map((v) => v.nombre.trim()))];
 
   const campoActivo = useRef<CampoPlantilla>('cuerpo_html');
   const seleccion = useRef<Record<CampoPlantilla, { inicio: number; fin: number }>>({
@@ -174,7 +177,7 @@ export function FormPlantilla({ initialValues, tipos, bloquearCodigo, toPayload,
             ) : null}
             {sinUsar.length > 0 ? (
               <p role='status' className='rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-sm'>
-                Variables declaradas que no se usan en asunto, HTML ni texto: <strong>{sinUsar.join(', ')}</strong>. Insértalas o quítalas.
+                Variables obligatorias que no se usan en asunto, HTML ni texto: <strong>{sinUsar.join(', ')}</strong>. Insértalas, quítalas o desmarca «Obligatoria».
               </p>
             ) : null}
           </section>
@@ -286,7 +289,10 @@ export function FormPlantilla({ initialValues, tipos, bloquearCodigo, toPayload,
                 <Input id={`variables.${index}.nombre`} {...register(`variables.${index}.nombre`)} />
                 {e?.nombre?.message ? <p className='text-xs text-destructive'>{e.nombre.message}</p> : null}
                 {!e?.nombre?.message && sinUsar.includes(variables[index]?.nombre.trim() ?? '') ? (
-                  <p className='text-xs text-amber-700 dark:text-amber-300'>No se usa en el contenido</p>
+                  <p className='text-xs text-amber-700 dark:text-amber-300'>Obligatoria y no se usa en el contenido</p>
+                ) : null}
+                {!e?.nombre?.message && opcionalesSinUsar.includes(variables[index]?.nombre.trim() ?? '') ? (
+                  <p className='text-xs text-muted-foreground'>Opcional: se guarda aunque no esté en el contenido</p>
                 ) : null}
               </div>
               <NativeSelect id={`variables.${index}.tipo_dato`} label='Tipo' opciones={TIPOS_DATO} className='col-span-6 md:col-span-2' {...register(`variables.${index}.tipo_dato`)} />

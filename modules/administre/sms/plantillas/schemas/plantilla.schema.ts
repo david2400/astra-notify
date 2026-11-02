@@ -30,17 +30,20 @@ export const plantillaSchema = z
     variables: z.array(variableSchema),
   })
   .superRefine((valores, ctx) => {
-    // Mismas reglas que valida el gateway: toda {{variable}} declarada y sin declaraciones de sobra.
+    // Mismas reglas que valida el gateway: toda {{variable}} declarada y toda obligatoria usada
+    // (una variable no obligatoria se guarda aunque no esté en el contenido).
     const usadas = variablesDelContenido(valores.contenido);
     const declaradas = valores.variables.map((v) => v.nombre.trim());
     const faltan = usadas.filter((u) => !declaradas.includes(u));
-    const sobran = declaradas.filter((d) => d && !usadas.includes(d));
+    const sobran = valores.variables
+      .filter((v) => v.obligatoria && v.nombre.trim() && !usadas.includes(v.nombre.trim()))
+      .map((v) => v.nombre.trim());
     const repetidas = declaradas.filter((d, i) => d && declaradas.indexOf(d) !== i);
     if (faltan.length) {
       ctx.addIssue({ code: 'custom', path: ['variables'], message: `Falta declarar: ${faltan.join(', ')}` });
     }
     if (sobran.length) {
-      ctx.addIssue({ code: 'custom', path: ['variables'], message: `No se usan en el contenido: ${sobran.join(', ')}` });
+      ctx.addIssue({ code: 'custom', path: ['variables'], message: `Obligatorias que no se usan en el contenido (insértalas o márcalas como no obligatorias): ${sobran.join(', ')}` });
     }
     if (repetidas.length) {
       ctx.addIssue({ code: 'custom', path: ['variables'], message: `Repetidas: ${[...new Set(repetidas)].join(', ')}` });
