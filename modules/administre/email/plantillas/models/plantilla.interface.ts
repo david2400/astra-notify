@@ -8,6 +8,13 @@ export type {
   IPlantillaPreview,
   IErrorVariable,
   TipoDatoVariable,
+  EstadoAprobacion,
+  AccionFlujo,
+  IPlantillaVersion,
+  IPlantillaHistorial,
+  AccionHistorial,
+  IEnlaceVerificado,
+  ResultadoEnlace,
 } from '@/server/domains/administre/email/plantillas/types';
 
 export const TIPOS_DATO = [

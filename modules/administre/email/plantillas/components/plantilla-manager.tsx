@@ -5,7 +5,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useRouter } from '@/shared/i18n/routing';
 import type { ColumnDef } from '@tanstack/react-table';
-import { HiOutlineChartBar, HiOutlineDocumentDuplicate, HiOutlineEnvelope, HiOutlinePencilSquare } from 'react-icons/hi2';
+import { HiOutlineChartBar, HiOutlineClock, HiOutlineDocumentDuplicate, HiOutlineEnvelope, HiOutlinePencilSquare } from 'react-icons/hi2';
 import { DataTable } from '@repo/ui/table/scenes';
 import { Modal } from '@repo/ui/modals/scenes';
 import { Buttons } from '@repo/ui/buttons/scenes';
@@ -19,6 +19,7 @@ import { confirmar, ejecutarAccion } from '../../shared/utils/feedback';
 import type { IPlantilla } from '../models/plantilla.interface';
 import type { IEstadisticasEnvio } from '@/server/domains/administre/email/envios/types';
 import { PlantillaEmailPreview } from './plantilla-preview';
+import { VersionResumen } from './aprobacion-badge';
 
 const pct = (v: number | null | undefined) => (v === null || v === undefined ? '—' : `${v.toLocaleString('es-CO', { maximumFractionDigits: 1 })}%`);
 const accion =
@@ -86,7 +87,11 @@ export function PlantillaEmailManager({ initialData, estadisticas = [] }: { init
           );
         },
       },
-      { accessorKey: 'version', header: 'Versión' },
+      {
+        accessorKey: 'version',
+        header: 'Versión',
+        cell: ({ row }) => <VersionResumen version={row.original.version} estado={row.original.estado_aprobacion} publicada={row.original.version_publicada} />,
+      },
       {
         accessorKey: 'eliminado',
         header: 'Estado',
@@ -103,6 +108,9 @@ export function PlantillaEmailManager({ initialData, estadisticas = [] }: { init
             </Link>
             <Link href={`/administre/email/plantillas/${encodeURIComponent(row.original.codigo)}/estadisticas`} className={accion}>
               <HiOutlineChartBar className='h-4 w-4' /> Seguimiento
+            </Link>
+            <Link href={`/administre/email/plantillas/${encodeURIComponent(row.original.codigo)}/versiones`} className={accion} title='Versiones, aprobación e historial'>
+              <HiOutlineClock className='h-4 w-4' /> Versiones
             </Link>
             <Link href={`/administre/email/plantillas/nueva?desde=${encodeURIComponent(row.original.codigo)}`} className={accion} title='Duplicar plantilla'>
               <HiOutlineDocumentDuplicate className='h-4 w-4' /> Duplicar
@@ -139,7 +147,7 @@ export function PlantillaEmailManager({ initialData, estadisticas = [] }: { init
       {plantillas.length === 0 ? (
         <EmptyState title='No hay plantillas' description='Crea una para enviar con "plantilla" y "variables" en el request.' />
       ) : (
-        <TablaAdmin minWidth={1250}>
+        <TablaAdmin minWidth={1380}>
           <DataTable data={plantillas} columns={columns} className='py-2' />
         </TablaAdmin>
       )}

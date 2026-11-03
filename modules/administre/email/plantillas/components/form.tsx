@@ -11,6 +11,7 @@ import { FormPlantilla } from '../scenes/form-plantilla';
 import type { PlantillaFormValues } from '../schemas/plantilla.schema';
 import type { ICrearPlantilla, IPlantilla } from '../models/plantilla.interface';
 import type { MarcaEditor } from '../editor/models/marca';
+import { VersionResumen } from './aprobacion-badge';
 
 export const toPayload = (v: PlantillaFormValues): ICrearPlantilla => ({
   codigo: v.codigo.trim().toUpperCase(),
@@ -30,9 +31,11 @@ export const toPayload = (v: PlantillaFormValues): ICrearPlantilla => ({
     valor_defecto: x.valor_defecto.trim() ? x.valor_defecto : null,
     descripcion: vacioANull(x.descripcion),
   })),
+  comentario_cambio: vacioANull(v.comentario_cambio),
 });
 
 const VACIA: PlantillaFormValues = {
+  comentario_cambio: '',
   codigo: '',
   nombre: '',
   descripcion: '',
@@ -46,6 +49,7 @@ const VACIA: PlantillaFormValues = {
 
 /** Valores del formulario a partir de una plantilla guardada (editar o duplicar). */
 const desdePlantilla = (plantilla: IPlantilla): PlantillaFormValues => ({
+  comentario_cambio: '',
   codigo: plantilla.codigo,
   nombre: plantilla.nombre,
   descripcion: plantilla.descripcion ?? '',
@@ -93,6 +97,17 @@ export function PlantillaEmailEditorPage({ plantilla, copiaDe, tipos, marca }: {
               ? `Copia de ${copiaDe.codigo}: cambia el código y ajusta lo que necesites.`
               : 'Arrastra bloques, secciones prediseñadas o componentes de la empresa al correo y revisa el resultado antes de guardar.'}
         </p>
+        {plantilla ? (
+          <div className='flex flex-wrap items-center gap-4 pt-1'>
+            <VersionResumen version={plantilla.version} estado={plantilla.estado_aprobacion} publicada={plantilla.version_publicada} />
+            <Link
+              href={`${RUTA}/${encodeURIComponent(plantilla.codigo)}/versiones`}
+              className='rounded-lg border border-border px-3 py-1.5 text-sm font-medium hover:bg-muted'>
+              Versiones y aprobación
+            </Link>
+            <p className='text-xs text-muted-foreground'>Al guardar cambios se crea un borrador: debe aprobarse y publicarse para que se envíe.</p>
+          </div>
+        ) : null}
       </header>
       <div className='rounded-2xl border border-border bg-card p-4 sm:p-6'>
         {plantilla ? (

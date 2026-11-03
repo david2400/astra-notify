@@ -38,6 +38,7 @@ import { EditorVisual, VistaDispositivos } from '../editor/components/editor-vis
 import { GaleriaInicio } from '../editor/components/galeria-inicio';
 import { aplicarMarca, type MarcaEditor } from '../editor/models/marca';
 import { SelectorVariables } from '../editor/components/selector-variables';
+import { PanelCalidad } from '../components/panel-calidad';
 
 interface Props {
   initialValues: PlantillaFormValues;
@@ -68,7 +69,7 @@ const CAMPOS_PASO: Record<Paso, (keyof PlantillaFormValues)[]> = {
   configuracion: ['codigo', 'nombre', 'descripcion', 'tipo_mensaje', 'asunto'],
   diseno: ['cuerpo_html', 'diseno_json'],
   variables: ['variables'],
-  revision: ['cuerpo_texto'],
+  revision: ['cuerpo_texto', 'comentario_cambio'],
 };
 
 function Aviso({ tono, children }: { tono: 'info' | 'alerta' | 'error'; children: ReactNode }) {
@@ -696,6 +697,7 @@ export function FormPlantilla({ initialValues, tipos, bloquearCodigo, nueva, mar
                 ))}
               </ul>
             </div>
+            <PanelCalidad asunto={asunto} html={html} texto={texto} tipoMensaje={watch('tipo_mensaje')} />
             <div className='space-y-2 rounded-2xl border border-border bg-background p-4'>
               <h3 className='text-sm font-semibold'>Probar</h3>
               <Buttons type='button' variant='outline' className='w-full' onClick={() => setPreview(toPayload(getValues()))}>
@@ -706,7 +708,7 @@ export function FormPlantilla({ initialValues, tipos, bloquearCodigo, nueva, mar
                   <Buttons type='button' variant='outline' className='w-full' onClick={() => setProbando(true)}>
                     <HiOutlinePaperAirplane className='h-4 w-4' /> Enviar prueba
                   </Buttons>
-                  <p className='text-[11px] text-muted-foreground'>La prueba usa la versión guardada: guarda antes si hiciste cambios.</p>
+                  <p className='text-[11px] text-muted-foreground'>La prueba usa la versión publicada. Para probar cambios, guárdalos, apruébalos y publícalos, o valida el borrador en el gateway.</p>
                 </>
               ) : (
                 <p className='text-[11px] text-muted-foreground'>Guarda la plantilla para enviar una prueba real.</p>
@@ -735,6 +737,14 @@ export function FormPlantilla({ initialValues, tipos, bloquearCodigo, nueva, mar
           </div>
           <p className='text-xs text-muted-foreground'>Se muestra en clientes que no leen HTML y mejora la entrega (filtros antispam).</p>
           <textarea id='cuerpo_texto' rows={7} placeholder='Hola {{nombre}}...' readOnly={modo === 'bloques' && textoAuto} className={`${claseArea} ${modo === 'bloques' && textoAuto ? 'bg-muted/40' : ''}`} {...enlazar('cuerpo_texto')} />
+        </div>
+        <div className='space-y-2 rounded-2xl border border-border bg-background p-4'>
+          <label htmlFor='comentario_cambio' className='text-sm font-semibold'>
+            Nota de esta versión <span className='font-normal text-muted-foreground'>(opcional)</span>
+          </label>
+          <p className='text-xs text-muted-foreground'>Qué cambió y por qué. La ve el revisor y queda en el historial de versiones.</p>
+          <textarea id='comentario_cambio' rows={2} maxLength={500} placeholder='Ej.: Actualizo el pie con la nueva dirección' className={claseArea} {...register('comentario_cambio')} />
+          {errors.comentario_cambio ? <p className='text-sm text-destructive'>{errors.comentario_cambio.message}</p> : null}
         </div>
       </section>
 

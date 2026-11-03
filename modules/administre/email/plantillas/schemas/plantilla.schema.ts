@@ -38,6 +38,8 @@ export const plantillaSchema = z
     /** Diseño del editor visual (JSON); vacío = plantilla editada como HTML. */
     diseno_json: z.string().max(4_000_000, 'Diseño demasiado grande'),
     variables: z.array(variableSchema),
+    /** Nota de la versión que se guarda (queda en el historial). */
+    comentario_cambio: z.string().trim().max(500, 'Máximo 500 caracteres').optional(),
   })
   .superRefine((v, ctx) => {
     if (!v.cuerpo_html.trim() && !v.cuerpo_texto.trim()) {

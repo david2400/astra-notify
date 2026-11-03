@@ -362,40 +362,57 @@ function conBarra(path: string): string {
   return path.startsWith('/') ? path : `/${path}`;
 }
 
+/**
+ * Usuario de la sesión para auditoría y aprobaciones (X-Usuario-Id / X-Usuario-Nombre). notificacion los reenvía a
+ * los gateways; el nombre va URL-encoded (los headers HTTP no admiten tildes).
+ */
+async function usuarioHeaders(): Promise<Record<string, string>> {
+  try {
+    const { auth } = await import('@/auth');
+    const session = await auth();
+    const u = session?.user as { id?: string | null; name?: string | null; username?: string | null } | undefined;
+    if (!u?.id) return {};
+    const nombre = u.name || u.username;
+    return { 'X-Usuario-Id': String(u.id), ...(nombre ? { 'X-Usuario-Nombre': encodeURIComponent(nombre) } : {}) };
+  } catch {
+    return {};
+  }
+}
+
 /** Cliente de notificacion con el prefijo indicado ('/api/notificacion/v1/...'). */
 function clienteNotificacion(prefijo: string) {
   const ruta = (path: string) => {
     const p = conBarra(path);
     return p === prefijo || p.startsWith(`${prefijo}/`) ? p : `${prefijo}${p}`;
   };
-  const conClave = <O extends ServerFetchOptions>(opts?: O): O & { baseUrl: string } => {
+  const conClave = async <O extends ServerFetchOptions>(opts?: O): Promise<O & { baseUrl: string }> => {
     const key = env.notificacionApiKey;
     return {
       ...(opts as O),
       baseUrl: env.notificacionBaseUrl,
-      headers: key ? { 'X-API-Key': key, ...opts?.headers } : opts?.headers,
+      headers: { ...(await usuarioHeaders()), ...(key ? { 'X-API-Key': key } : {}), ...opts?.headers },
     };
   };
   // async: si falta la URL el error llega como promesa rechazada (Promise.allSettled lo atrapa).
   return {
     async get<T>(path: string, opts?: ServerFetchOptions & { params?: Record<string, unknown> }) {
-      return serverRequest<T>('GET', ruta(path), conClave(opts));
+      return serverRequest<T>('GET', ruta(path), await conClave(opts));
     },
 
     async post<T>(path: string, body?: unknown, opts?: ServerFetchOptions) {
-      return serverRequest<T>('POST', ruta(path), { ...conClave(opts), body });
+      return serverRequest<T>('POST', ruta(path), { ...(await conClave(opts)), body });
     },
 
     async put<T>(path: string, body?: unknown, opts?: ServerFetchOptions) {
-      return serverRequest<T>('PUT', ruta(path), { ...conClave(opts), body });
+      return serverRequest<T>('PUT', ruta(path), { ...(await conClave(opts)), body });
     },
 
     async patch<T>(path: string, body?: unknown, opts?: ServerFetchOptions) {
-      return serverRequest<T>('PATCH', ruta(path), { ...conClave(opts), body });
+      return serverRequest<T>('PATCH', ruta(path), { ...(await conClave(opts)), body });
     },
 
     async delete<T>(path: string, opts?: ServerFetchOptions) {
-      return serverRequest<T>('DELETE', ruta(path), conClave(opts));
+      return serverRequest<T>('DELETE', ruta(path), await conClave(opts));
     },
   } as const;
 }

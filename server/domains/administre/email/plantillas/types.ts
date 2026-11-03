@@ -31,6 +31,10 @@ export interface IPlantilla extends IAuditoria {
   /** Diseño del editor visual (JSON). Solo en el detalle; null = plantilla editada como HTML. */
   diseno_json?: string | null;
   version: number;
+  /** Estado de la versión actual (la última guardada). */
+  estado_aprobacion?: EstadoAprobacion;
+  /** Versión que se envía (null = ninguna publicada todavía). */
+  version_publicada?: number | null;
   /** El listado no incluye variables; el detalle (GET /{codigo}) sí. */
   variables?: IPlantillaVariable[];
   variables_usadas?: string[];
@@ -58,6 +62,8 @@ export interface ICrearPlantilla {
   cuerpo_texto?: string | null;
   diseno_json?: string | null;
   variables: IPlantillaVariablePayload[];
+  /** Nota de la nueva versión (queda en el historial). */
+  comentario_cambio?: string | null;
 }
 
 export type IActualizarPlantilla = ICrearPlantilla;
@@ -82,4 +88,60 @@ export interface IPlantillaPreview {
   texto?: string;
   errores?: IErrorVariable[];
   variables_sin_usar?: string[];
+}
+
+/** Estado de una versión: solo PUBLICADA se envía. */
+export type EstadoAprobacion = 'BORRADOR' | 'EN_REVISION' | 'APROBADA' | 'RECHAZADA' | 'PUBLICADA' | 'REEMPLAZADA' | 'DESCARTADA';
+
+export type AccionFlujo = 'enviar-revision' | 'aprobar' | 'rechazar' | 'publicar';
+
+export interface IPlantillaVersion {
+  version: number;
+  estado: EstadoAprobacion;
+  asunto: string;
+  tipo_mensaje?: string | null;
+  comentario?: string | null;
+  autor_id?: string | null;
+  autor_nombre?: string | null;
+  created_at?: string;
+  revisado_por_id?: string | null;
+  revisado_por_nombre?: string | null;
+  revisado_at?: string | null;
+  publicado_por_id?: string | null;
+  publicado_por_nombre?: string | null;
+  publicado_at?: string | null;
+  /** Solo en el detalle de una versión. */
+  cuerpo_html?: string | null;
+  cuerpo_texto?: string | null;
+  diseno_json?: string | null;
+  variables?: IPlantillaVariablePayload[];
+}
+
+export type AccionHistorial =
+  | 'CREADA' | 'EDITADA' | 'ENVIADA_REVISION' | 'APROBADA' | 'RECHAZADA' | 'PUBLICADA'
+  | 'RESTAURADA' | 'ACTIVADA' | 'DESACTIVADA' | 'COMENTARIO';
+
+export interface IPlantillaHistorial {
+  version?: number | null;
+  accion: AccionHistorial;
+  comentario?: string | null;
+  actor_id?: string | null;
+  actor_nombre?: string | null;
+  fecha?: string;
+}
+
+export interface IFlujoPayload {
+  comentario?: string | null;
+  /** Versión sobre la que se actúa: si cambió, el gateway responde 409. */
+  version?: number;
+}
+
+export type ResultadoEnlace = 'OK' | 'REDIRECCION' | 'ROTO' | 'NO_VERIFICABLE' | 'BLOQUEADO' | 'ERROR';
+
+export interface IEnlaceVerificado {
+  url: string;
+  resultado: ResultadoEnlace;
+  status?: number | null;
+  mensaje?: string | null;
+  duracion_ms?: number;
 }

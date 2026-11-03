@@ -8,3 +8,5 @@ export { PlantillaEmailManager } from './components/plantilla-manager';
 export { PlantillaEmailEditorPage, RegisterPlantilla, UpdatePlantilla } from './components/form';
 export { PlantillaEmailPreview } from './components/plantilla-preview';
 export { VistaHtml } from './components/vista-html';
+export { VersionesPlantilla } from './components/versiones-plantilla';
+export { AprobacionBadge, VersionResumen } from './components/aprobacion-badge';
