@@ -178,7 +178,7 @@ function ContenidoSimple({ b, a, acciones, activo }: { b: BloqueSimple; a: Ajust
           ) : (
             <div className='mx-auto flex flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-slate-300 bg-slate-50 py-10 text-xs text-slate-500' style={{ width: `${b.ancho}%` }}>
               <HiOutlinePhoto className='h-8 w-8' />
-              {esVariable ? `Imagen dinámica ${src}` : 'Selecciona el bloque y pega la URL de la imagen'}
+              {esVariable ? `Imagen dinámica ${src}` : 'Selecciona el bloque y elige una imagen de la biblioteca'}
             </div>
           )}
         </div>

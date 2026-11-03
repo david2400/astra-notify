@@ -11,6 +11,7 @@ export const EMAIL_ADMIN_SECCIONES = [
   { label: 'Rutas', href: '/administre/email/rutas', descripcion: 'Orden de cuentas, reintentos y fallback por tipo de mensaje.' },
   { label: 'Plantillas', href: '/administre/email/plantillas', descripcion: 'Editor de arrastrar y soltar, variables {{nombre}}, vista previa y seguimiento.' },
   { label: 'Marca y componentes', href: '/administre/email/marca', descripcion: 'Logo, colores, fuente y pie legal de los correos; componentes reutilizables.' },
+  { label: 'Imágenes', href: '/administre/email/imagenes', descripcion: 'Biblioteca de imágenes propias (S3): subir, organizar y reutilizar en los correos.' },
 ] as const;
 
 /** Etiqueta de la ruta central (POST /v1/email/send). */

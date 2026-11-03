@@ -63,6 +63,7 @@ export const NAV_ITEMS: NavItem[] = [
       { label: "Rutas", href: "/administre/email/rutas" },
       { label: "Plantillas", href: "/administre/email/plantillas" },
       { label: "Marca y componentes", href: "/administre/email/marca" },
+      { label: "Imágenes", href: "/administre/email/imagenes" },
     ],
   },
 ];

@@ -23,6 +23,7 @@ import { generarHtml } from '../../plantillas/editor/utils/generar-html';
 import { SECCIONES } from '../../plantillas/editor/utils/secciones';
 import { CATEGORIAS_COMPONENTE } from '../../plantillas/editor/components/biblioteca';
 import { VistaDispositivos } from '../../plantillas/editor/components/editor-visual';
+import { BotonElegirImagen } from '../../../imagenes/components/selector-imagen';
 
 const COLOR = /^#[0-9a-fA-F]{6}$/;
 const URL_HTTPS = /^https:\/\/\S+$/;
@@ -150,8 +151,17 @@ export function MarcaEmailManager({ marca, componentes }: { marca: IMarca; compo
             <Etiqueta texto='Nombre de la empresa' error={errores.nombre_empresa}>
               <input className={claseInput} value={v.nombre_empresa} maxLength={150} onChange={(e) => set('nombre_empresa')(e.target.value)} />
             </Etiqueta>
-            <Etiqueta texto='Logo (URL https)' error={tocado ? errores.logo_url : undefined} ayuda='PNG o SVG publicado en un servidor; sin logo se usa el nombre de la empresa.'>
-              <input className={claseInput} value={v.logo_url ?? ''} placeholder='https://…/logo.png' onChange={(e) => set('logo_url')(e.target.value)} />
+            <Etiqueta texto='Logo' error={tocado ? errores.logo_url : undefined} ayuda='Elígelo de la biblioteca (PNG con fondo transparente) o pega una URL https; sin logo se usa el nombre de la empresa. SVG no se ve en Gmail ni Outlook.'>
+              <div className='flex gap-1.5'>
+                <input className={claseInput} value={v.logo_url ?? ''} placeholder='https://…/logo.png' onChange={(e) => set('logo_url')(e.target.value)} />
+                <BotonElegirImagen
+                  onElegir={(img) => {
+                    set('logo_url')(img.url);
+                    // ancho sugerido: el real de la imagen (las de 2x se muestran a la mitad), entre 40 y 400
+                    if (img.ancho) set('logo_ancho')(Math.min(400, Math.max(40, Math.round((img.ancho > 400 ? img.ancho / 2 : img.ancho) / 10) * 10)));
+                  }}
+                />
+              </div>
             </Etiqueta>
             <Etiqueta texto={`Ancho del logo: ${v.logo_ancho ?? 160}px`}>
               <input type='range' min={40} max={400} step={10} value={v.logo_ancho ?? 160} onChange={(e) => set('logo_ancho')(Number(e.target.value))} className='w-full accent-primary' />

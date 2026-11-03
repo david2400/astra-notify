@@ -13,6 +13,7 @@ import {
   HiOutlineDevicePhoneMobile,
   HiOutlineEye,
   HiOutlinePaintBrush,
+  HiOutlinePhoto,
   HiOutlineSquares2X2,
   HiOutlineVariable,
 } from 'react-icons/hi2';
@@ -35,6 +36,9 @@ import { generarHtml } from '../utils/generar-html';
 import { actualizar, buscar, desplazar, duplicar, eliminar, insertar, insertarVarios, mover } from '../utils/operaciones';
 import { aplicarMarca, type MarcaEditor } from '../models/marca';
 import { DialogoGuardarComponente, PanelGuardados, PanelSecciones } from './biblioteca';
+import { BibliotecaImagenes } from '../../../../imagenes/components/biblioteca-imagenes';
+import { anchoEnCorreo } from '../../../../imagenes/utils/optimizar';
+import type { IImagen } from '@/server/domains/administre/imagenes/types';
 import { HtmlAislado } from './html-aislado';
 import { Lienzo, MIME_MOVER, MIME_NUEVO, type Arrastre } from './lienzo';
 import { PanelEstilos, PanelPropiedades } from './panel-propiedades';
@@ -68,17 +72,23 @@ interface Props {
   marca: MarcaEditor;
 }
 
-type Pestana = 'bloques' | 'secciones' | 'guardados' | 'estilo' | 'variables';
+type Pestana = 'bloques' | 'secciones' | 'guardados' | 'imagenes' | 'estilo' | 'variables';
 
 const PESTANAS: { id: Pestana; etiqueta: string; titulo: string; icono: ReactNode }[] = [
   { id: 'bloques', etiqueta: 'Bloques', titulo: 'Bloques básicos', icono: <HiOutlineSquares2X2 className='h-5 w-5' /> },
   { id: 'secciones', etiqueta: 'Secciones', titulo: 'Secciones prediseñadas', icono: <HiOutlineRectangleGroup className='h-5 w-5' /> },
   { id: 'guardados', etiqueta: 'Guardados', titulo: 'Componentes de la empresa', icono: <HiOutlineBookmark className='h-5 w-5' /> },
+  { id: 'imagenes', etiqueta: 'Imágenes', titulo: 'Biblioteca de imágenes', icono: <HiOutlinePhoto className='h-5 w-5' /> },
   { id: 'estilo', etiqueta: 'Estilo', titulo: 'Estilo del correo', icono: <HiOutlinePaintBrush className='h-5 w-5' /> },
   { id: 'variables', etiqueta: 'Variables', titulo: 'Variables', icono: <HiOutlineVariable className='h-5 w-5' /> },
 ];
 
 /** Barra de íconos (como la de Brevo) que cambia el contenido del panel izquierdo. */
+/** Bloque imagen a partir de una imagen de la biblioteca (las pequeñas no se estiran: se respeta su ancho). */
+function bloqueDeImagen(img: IImagen): Bloque {
+  return { ...crearBloque('imagen'), url: img.url, alt: img.alt || img.nombre, ancho: anchoEnCorreo(img.ancho) } as Bloque;
+}
+
 function Riel({ actual, onChange, conVariables }: { actual: Pestana; onChange: (p: Pestana) => void; conVariables: boolean }) {
   return (
     <div role='tablist' aria-label='Biblioteca del editor' aria-orientation='vertical' className='flex gap-1 overflow-x-auto border-b border-border bg-muted/40 p-1.5 lg:flex-col lg:border-b-0 lg:border-r'>
@@ -309,6 +319,18 @@ export function EditorVisual({ diseno, onChange, variables, onCrearVariable, pan
           <h3 className='text-sm font-semibold text-foreground'>{PESTANAS.find((p) => p.id === pestana)?.titulo}</h3>
           {pestana === 'secciones' ? <PanelSecciones marca={marca} onArrastre={setArrastre} onInsertar={(b) => agregarVarios(b)} /> : null}
           {pestana === 'guardados' ? <PanelGuardados marca={marca} version={versionGuardados} onArrastre={setArrastre} onInsertar={(b) => agregarVarios(b)} /> : null}
+          {pestana === 'imagenes' ? (
+            <BibliotecaImagenes
+              modo='seleccionar'
+              compacto
+              onSeleccionar={(img) => agregarVarios([bloqueDeImagen(img)])}
+              onArrastrar={(img, dt) => {
+                if (!img) return setArrastre(null);
+                dt?.setData(MIME_NUEVO, 'imagen');
+                setArrastre({ clase: 'seccion', bloques: [bloqueDeImagen(img)], tipo: 'imagen' });
+              }}
+            />
+          ) : null}
           {pestana === 'bloques' ? (
             <div>
               <p className='mb-2 text-xs text-muted-foreground'>Arrastra un bloque al correo o haz clic para agregarlo debajo del seleccionado.</p>

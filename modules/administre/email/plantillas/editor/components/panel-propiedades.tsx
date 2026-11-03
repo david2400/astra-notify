@@ -14,6 +14,8 @@ import {
   type RedSocial,
 } from '../models/diseno';
 import { cambiarDistribucion } from '../utils/operaciones';
+import { BotonElegirImagen } from '../../../../imagenes/components/selector-imagen';
+import { anchoEnCorreo } from '../../../../imagenes/utils/optimizar';
 import { CampoAlineacion, CampoArea, CampoColor, CampoInterruptor, CampoNumero, CampoSelect, CampoTexto, Seccion } from './campos';
 
 interface Props {
@@ -91,6 +93,13 @@ export function PanelPropiedades({ bloque: b, onChange, onCerrar, onEliminar, va
 
       {b.tipo === 'imagen' ? (
         <Seccion titulo='Imagen'>
+          <div className='flex items-center justify-between gap-2 rounded-lg border border-dashed border-border bg-muted/30 p-2'>
+            <span className='text-[11px] leading-4 text-muted-foreground'>Elige o sube una imagen propia (se optimiza y publica sola).</span>
+            <BotonElegirImagen
+              className='inline-flex shrink-0 items-center gap-1 rounded-lg bg-primary px-2.5 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90'
+              onElegir={(img) => onChange({ url: img.url, alt: img.alt || img.nombre, ancho: anchoEnCorreo(img.ancho) } as Partial<Bloque>)}
+            />
+          </div>
           <CampoTexto
             etiqueta='URL de la imagen'
             tipo='url'
@@ -98,7 +107,7 @@ export function PanelPropiedades({ bloque: b, onChange, onCerrar, onEliminar, va
             onChange={set('url')}
             placeholder='https://…/imagen.png'
             variables={variables}
-            ayuda='Debe ser una URL pública (https). Se recomienda PNG o JPG de máximo 1200 px de ancho.'
+            ayuda='O pega una URL pública (https). Ideal: PNG o JPG de 1200 px de ancho.'
           />
           <CampoTexto etiqueta='Texto alternativo' valor={b.alt} onChange={set('alt')} placeholder='Describe la imagen' ayuda='Se muestra si el cliente bloquea imágenes.' />
           <CampoTexto etiqueta='Enlace al hacer clic (opcional)' tipo='url' valor={b.enlace} onChange={set('enlace')} placeholder='https://' variables={variables} />

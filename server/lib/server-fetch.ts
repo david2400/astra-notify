@@ -244,7 +244,13 @@ async function serverRequest<T>(
 
     // Only attach body for methods that support it
     if (body !== undefined && method !== 'GET' && method !== 'HEAD') {
-      fetchOptions.body = JSON.stringify(body);
+      if (body instanceof FormData) {
+        // multipart: fetch arma el Content-Type con el boundary
+        delete (fetchOptions.headers as Record<string, string>)['Content-Type'];
+        fetchOptions.body = body;
+      } else {
+        fetchOptions.body = JSON.stringify(body);
+      }
     }
 
     if (env.isDev) {
